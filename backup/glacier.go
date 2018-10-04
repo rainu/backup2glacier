@@ -15,6 +15,13 @@ import (
 	"strconv"
 )
 
+type AWSGlacierUploadResult struct {
+	CreationResult *glacier.ArchiveCreationOutput
+	ArchiveDesc    string
+	PartSize       int
+	TotalSize      int64
+}
+
 type AWSGlacierUpload struct {
 	Source      io.Reader
 	VaultName   string
@@ -23,7 +30,7 @@ type AWSGlacierUpload struct {
 }
 
 type AWSGlacier interface {
-	Upload(AWSGlacierUpload) (*glacier.ArchiveCreationOutput, error)
+	Upload(AWSGlacierUpload) (*AWSGlacierUploadResult, *string, error)
 }
 
 type awsGlacier struct {
@@ -43,10 +50,10 @@ func NewAWSGlacier(config *config.Config) (AWSGlacier, error) {
 	}, nil
 }
 
-func (a *awsGlacier) Upload(upload AWSGlacierUpload) (*glacier.ArchiveCreationOutput, error) {
+func (a *awsGlacier) Upload(upload AWSGlacierUpload) (*AWSGlacierUploadResult, *string, error) {
 	initResult, err := a.initUpload(upload.VaultName, upload.ArchiveDesc, upload.PartSize)
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not init multipart upload")
+		return nil, nil, errors.Wrap(err, "Could not init multipart upload")
 	}
 	LogInfo("Initialise multipart upload: %+v", initResult)
 
@@ -72,17 +79,22 @@ func (a *awsGlacier) Upload(upload AWSGlacierUpload) (*glacier.ArchiveCreationOu
 	totalBytes, hashes, err := a.uploadParts(upload.Source, upload.VaultName, initResult.UploadId, upload.PartSize)
 	if err != nil {
 		abortMultipartUpload()
-		return nil, errors.Wrap(err, "Failed to upload to glacier. Upload aborted")
+		return nil, initResult.UploadId, errors.Wrap(err, "Failed to upload to glacier. Upload aborted")
 	}
 
 	completeResult, err := a.completeUpload(upload.VaultName, initResult.UploadId, hashes, totalBytes)
 	if err != nil {
 		abortMultipartUpload()
-		return nil, errors.Wrap(err, "Error while completing multipart upload")
+		return nil, initResult.UploadId, errors.Wrap(err, "Error while completing multipart upload")
 	}
 	LogInfo("Complete multipart upload: %+v", completeResult)
 
-	return completeResult, nil
+	return &AWSGlacierUploadResult{
+		ArchiveDesc:    upload.ArchiveDesc,
+		PartSize:       upload.PartSize,
+		CreationResult: completeResult,
+		TotalSize:      totalBytes,
+	}, initResult.UploadId, nil
 }
 
 func (a *awsGlacier) initUpload(vaultName, archiveDesc string, partSize int) (*glacier.InitiateMultipartUploadOutput, error) {

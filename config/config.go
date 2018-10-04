@@ -5,50 +5,49 @@ import (
 	"fmt"
 	"github.com/alexflint/go-arg"
 	"golang.org/x/crypto/ssh/terminal"
+	"os"
+	"os/user"
+	"strings"
 	"syscall"
 )
 
 var validPartSizes = []int{1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096}
 
+const defaultDatabase = "~/.aws/backup2glacier/database.db"
+
 // Config - Collection of all configuration options for this application.
 type Config struct {
-	awsConfig
+	File         string `arg:"positional,required,env:FILE,help:The file or folder to backup."`
+	AWSVaultName string `arg:"positional,required,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
 
 	LogLevel string `arg:"-l,env:LOG_LEVEL,help:The log level."`
 
-	File string `arg:"-f,env:FILE,help:The file or folder to backup."`
+	Password     string `arg:"-p,env:PASSWORD,help:The password for encryption."`
+	SavePassword bool   `arg:"--save-password,env:SAVE_PASSWORD,help:Should the password save into the database (plain)? Default: false"`
 
-	Password string `arg:"-p,env:PASSWORD,help:The password for encryption."`
-}
+	Database string `arg:"--database,env:DATABASE,help:The path to the database. Default is ~/.aws/backup2glacier/database.db"`
 
-type awsConfig struct {
-	AWSProfile string `arg:"--aws-profile,env:AWS_PROFILE,help:If you want to use a other AWS profile"`
-
+	AWSProfile            string `arg:"--aws-profile,env:AWS_PROFILE,help:If you want to use a other AWS profile"`
 	AWSPartSize           int    `arg:"--aws-part-size,env:AWS_PART_SIZE,help:The size of each part (except the last) in MiB."`
-	AWSVaultName          string `arg:"-v,env:AWS_VAULT_NAME,help:The name of the vault."`
 	AWSArchiveDescription string `arg:"-d,env:AWS_ARCHIVE_DESC,help:The description of the archive."`
 }
 
 // NewConfig - Constructor for Config objects
 func NewConfig() Config {
 	cfg := Config{
-		LogLevel: "INFO",
-
-		awsConfig: awsConfig{
-			AWSPartSize: 1024 * 1024, //1MB chunk
-		},
+		LogLevel:     "INFO",
+		Database:     defaultDatabase,
+		SavePassword: false,
+		AWSPartSize:  1024 * 1024, //1MB chunk
 	}
-	err := arg.Parse(&cfg)
-	if err != nil {
-		LogFatal("Could not read config. Error: %v", err)
-	}
+	parser := arg.MustParse(&cfg)
 
 	if cfg.File == "" {
-		LogFatal("No file given!")
+		fail(parser, "No file given!")
 	}
 
 	if !isValidPartSize(cfg.AWSPartSize) {
-		LogFatal("The part size is not valid. Valid sizes are: %+v", validPartSizes)
+		fail(parser, "The part size is not valid. Valid sizes are: %+v", validPartSizes)
 	}
 
 	cfg.AWSPartSize = 1024 * 1024 * cfg.AWSPartSize
@@ -57,8 +56,30 @@ func NewConfig() Config {
 		cfg.Password = askForPassword()
 	}
 
+	if cfg.AWSArchiveDescription == "" {
+		cfg.AWSArchiveDescription = "Backup " + cfg.File + " to " + cfg.AWSVaultName
+	}
+
+	if cfg.Database == defaultDatabase {
+		usr, _ := user.Current()
+		os.MkdirAll(usr.HomeDir+"/.aws/backup2glacier/", os.ModePerm)
+	}
+
+	if strings.HasPrefix(cfg.Database, "~/") {
+		usr, _ := user.Current()
+
+		cfg.Database = usr.HomeDir + "/" + cfg.Database[2:]
+	}
+
 	return cfg
 }
+
+func fail(parser *arg.Parser, format string, args ...interface{}) {
+	fmt.Printf(format+"\n\n", args...)
+	parser.WriteHelp(os.Stdout)
+	os.Exit(1)
+}
+
 func isValidPartSize(size int) bool {
 	for _, valid := range validPartSizes {
 		if valid == size {

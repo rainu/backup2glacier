@@ -1,19 +1,24 @@
 package main
 
 import (
-	"backup2glacier/backup"
+	"backup2glacier/cli"
 	"backup2glacier/config"
-	. "backup2glacier/log"
 )
 
 func main() {
 	cfg := config.NewConfig()
-	b, err := backup.NewBackupManager(&cfg)
 
-	if err != nil {
-		LogFatal("Could not init backup. Error: %v", err)
+	var cliAction cli.CliAction
+
+	switch cfg.Action {
+	case config.ActionCreate:
+		cliAction = cli.NewCreateAction()
+	case config.ActionList:
+		cliAction = cli.NewListAction()
+	default:
+		panic("This should never happen!")
 	}
-	defer b.Close()
 
-	b.Create(cfg.File, cfg.AWSArchiveDescription, cfg.AWSVaultName)
+	cliAction.Validate(&cfg)
+	cliAction.Do(&cfg)
 }

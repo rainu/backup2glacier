@@ -6,7 +6,9 @@ import (
 	_ "github.com/golang-migrate/migrate/source/github"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/pkg/errors"
 	"io"
+	"reflect"
 )
 
 type Repository interface {
@@ -15,6 +17,9 @@ type Repository interface {
 	SaveBackup(backup *model.Backup)
 	UpdateBackup(backup *model.Backup)
 	AddContent(backup *model.Backup, content *model.Content)
+
+	Count() int64
+	List() []model.Backup
 }
 
 type repository struct {
@@ -24,7 +29,7 @@ type repository struct {
 func NewRepository(dbFile string) Repository {
 	db, err := gorm.Open("sqlite3", dbFile)
 	if err != nil {
-		panic("failed to connect database")
+		panic(errors.Wrap(err, "failed to connect database"))
 	}
 
 	// Migrate the schema
@@ -52,4 +57,18 @@ func (r *repository) AddContent(backup *model.Backup, content *model.Content) {
 	content.BackupID = backup.ID
 
 	r.db.Create(content)
+}
+
+func (r *repository) Count() int64 {
+	var count int64
+	r.db.Table(reflect.TypeOf(&model.Backup{}).Name()).Count(&count)
+
+	return count
+}
+
+func (r *repository) List() []model.Backup {
+	var backups []model.Backup
+	r.db.Find(&backups)
+
+	return backups
 }

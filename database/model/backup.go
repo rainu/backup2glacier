@@ -4,6 +4,26 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+const (
+	ColumnID         = "id"
+	ColumnCreatedAt  = "created_at"
+	ColumnUpdateddAt = "updated_at"
+
+	ColumnBackupVault       = "vault"
+	ColumnBackupDescription = "description"
+	ColumnBackupUploadId    = "upload_id"
+	ColumnBackupArchiveId   = "archive_id"
+	ColumnBackupLocation    = "location"
+	ColumnBackupChecksum    = "checksum"
+	ColumnBackupLength      = "length"
+	ColumnBackupPassword    = "password"
+	ColumnBackupError       = "error"
+
+	ColumnContentZipPath  = "zip_path"
+	ColumnContentRealPath = "real_path"
+	ColumnContentLength   = "length"
+)
+
 type Backup struct {
 	gorm.Model
 

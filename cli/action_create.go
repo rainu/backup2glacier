@@ -19,36 +19,40 @@ func NewCreateAction() CliAction {
 }
 
 func (a *actionCreate) Do(cfg *config.Config) {
-	b, err := backup.NewBackupManager(cfg)
+	b, err := backup.NewBackupManager(
+		cfg.Create.Password,
+		cfg.Create.SavePassword,
+		cfg.Create.AWSPartSize,
+		cfg.Create.Database)
 
 	if err != nil {
 		LogFatal("Could not init backup. Error: %v", err)
 	}
 	defer b.Close()
 
-	b.Create(cfg.File, cfg.AWSArchiveDescription, cfg.AWSVaultName)
+	b.Create(cfg.Create.File, cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
 }
 
 func (a *actionCreate) Validate(cfg *config.Config) {
-	if cfg.File == "" {
-		cfg.Fail("No file given!")
+	if cfg.Create.File == "" {
+		cfg.Create.Fail("No file given!")
 	}
 
-	if !isValidPartSize(cfg.AWSPartSize) {
-		cfg.Fail("The part size is not valid. Valid sizes are: %+v", validPartSizes)
+	if !isValidPartSize(cfg.Create.AWSPartSize) {
+		cfg.Create.Fail("The part size is not valid. Valid sizes are: %+v", validPartSizes)
 	}
 
-	cfg.AWSPartSize = 1024 * 1024 * cfg.AWSPartSize
+	cfg.Create.AWSPartSize = 1024 * 1024 * cfg.Create.AWSPartSize
 
-	if cfg.Password == "" {
-		cfg.Password = askForPassword()
+	if cfg.Create.Password == "" {
+		cfg.Create.Password = askForPassword()
 	}
 
-	if cfg.AWSArchiveDescription == "" {
-		cfg.AWSArchiveDescription = "Backup " + cfg.File + " to " + cfg.AWSVaultName
+	if cfg.Create.AWSArchiveDescription == "" {
+		cfg.Create.AWSArchiveDescription = "Backup " + cfg.Create.File + " to " + cfg.Create.AWSVaultName
 	}
 
-	ValidateDatabase(cfg)
+	ValidateDatabase(&cfg.Create.DatabaseConfig)
 }
 
 func askForPassword() string {

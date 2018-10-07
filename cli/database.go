@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func ValidateDatabase(cfg *config.Config) {
+func ValidateDatabase(cfg *config.DatabaseConfig) {
 	if cfg.Database == config.DefaultDatabase {
 		usr, _ := user.Current()
 		os.MkdirAll(usr.HomeDir+"/.aws/backup2glacier/", os.ModePerm)

@@ -19,7 +19,8 @@ type Repository interface {
 	AddContent(backup *model.Backup, content *model.Content)
 
 	Count() int64
-	List() []model.Backup
+	List() BackupIterator
+	GetById(uint) (*model.Backup, ContentIterator)
 }
 
 type repository struct {
@@ -66,9 +67,23 @@ func (r *repository) Count() int64 {
 	return count
 }
 
-func (r *repository) List() []model.Backup {
-	var backups []model.Backup
-	r.db.Find(&backups)
+func (r *repository) List() BackupIterator {
+	sqlRows, err := r.db.Model(&model.Backup{}).Rows()
+	if err != nil {
+		panic(errors.Wrap(err, "Error while creating rows"))
+	}
 
-	return backups
+	return newBackupIterator(sqlRows, r.db)
+}
+
+func (r *repository) GetById(id uint) (*model.Backup, ContentIterator) {
+	var backup model.Backup
+	r.db.First(&backup, id)
+
+	sqlRows, err := r.db.Model(&model.Content{}).Where(&model.Content{BackupID: id}).Rows()
+	if err != nil {
+		panic(errors.Wrap(err, "Error while creating rows"))
+	}
+
+	return &backup, newContentIterator(sqlRows, r.db)
 }

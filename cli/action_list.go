@@ -15,7 +15,7 @@ func NewListAction() CliAction {
 }
 
 func (a *actionList) Do(cfg *config.Config) {
-	dbRepository := database.NewRepository(cfg.Database)
+	dbRepository := database.NewRepository(cfg.List.Database)
 
 	tbl, err := prettytable.NewTable(
 		prettytable.Column{Header: "ID"},
@@ -30,7 +30,15 @@ func (a *actionList) Do(cfg *config.Config) {
 	}
 	tbl.Separator = " | "
 
-	for _, backup := range dbRepository.List() {
+	backupIter := dbRepository.List()
+	defer backupIter.Close()
+
+	for {
+		backup, next := backupIter.Next()
+		if !next {
+			break
+		}
+
 		err := tbl.AddRow(
 			backup.ID,
 			backup.CreatedAt.Format(time.RFC3339),
@@ -42,11 +50,12 @@ func (a *actionList) Do(cfg *config.Config) {
 			panic(err)
 		}
 	}
+
 	tbl.Print()
 }
 
 func (a *actionList) Validate(cfg *config.Config) {
-	ValidateDatabase(cfg)
+	ValidateDatabase(&cfg.List.DatabaseConfig)
 }
 
 func sValue(value *string) string {

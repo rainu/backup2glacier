@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"backup2glacier/config"
 	. "backup2glacier/log"
 	"encoding/hex"
 	"fmt"
@@ -38,7 +37,7 @@ type awsGlacier struct {
 	glacier *glacier.Glacier
 }
 
-func NewAWSGlacier(config *config.Config) (AWSGlacier, error) {
+func NewAWSGlacier() (AWSGlacier, error) {
 	s, err := session.NewSession()
 	if err != nil {
 		return nil, errors.Wrap(err, "Error while create new AWS session")

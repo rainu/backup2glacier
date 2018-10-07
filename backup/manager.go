@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"backup2glacier/config"
 	"backup2glacier/database"
 	"backup2glacier/database/model"
 	"github.com/aws/aws-sdk-go/service/glacier"
@@ -29,20 +28,25 @@ type backupManager struct {
 	dbRepository database.Repository
 	glacier      AWSGlacier
 	crypt        CryptModule
-	config       *config.Config
+
+	partSize     int
+	savePassword bool
+	password     string
 }
 
-func NewBackupManager(config *config.Config) (BackupManager, error) {
-	g, err := NewAWSGlacier(config)
+func NewBackupManager(pw string, savePw bool, partSize int, dbUrl string) (BackupManager, error) {
+	g, err := NewAWSGlacier()
 	if err != nil {
 		return nil, err
 	}
 
 	return &backupManager{
-		dbRepository: database.NewRepository(config.Database),
+		dbRepository: database.NewRepository(dbUrl),
 		glacier:      g,
-		crypt:        NewCryptModule(config.Password),
-		config:       config,
+		crypt:        NewCryptModule(pw),
+		partSize:     partSize,
+		savePassword: savePw,
+		password:     pw,
 	}, nil
 }
 
@@ -107,7 +111,7 @@ func (b *backupManager) Create(file, description, vaultName string) *BackupResul
 			Source:      srcCrypt,
 			VaultName:   vaultName,
 			ArchiveDesc: description,
-			PartSize:    b.config.AWSPartSize,
+			PartSize:    b.partSize,
 		})
 	}()
 
@@ -140,8 +144,8 @@ func (b *backupManager) saveBackupIntent(description string, vaultName string) *
 		Description: description,
 		Vault:       vaultName,
 	}
-	if b.config.SavePassword {
-		dbBackupEntity.Password = b.config.Password
+	if b.savePassword {
+		dbBackupEntity.Password = b.password
 	}
 	b.dbRepository.SaveBackup(dbBackupEntity)
 	return dbBackupEntity

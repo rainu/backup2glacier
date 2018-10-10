@@ -53,6 +53,7 @@ func (a *actionCreate) Validate(cfg *config.Config) {
 	}
 
 	ValidateDatabase(&cfg.Create.DatabaseConfig)
+	ValidateAWS(&cfg.Create.AwsGeneralConfig)
 }
 
 func askForPassword() string {

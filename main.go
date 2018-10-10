@@ -3,9 +3,13 @@ package main
 import (
 	"backup2glacier/cli"
 	"backup2glacier/config"
+	"os"
 )
 
 func main() {
+	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
+	os.Setenv("AWS_PROFILE", "default")
+
 	cfg := config.NewConfig()
 
 	var cliAction cli.CliAction

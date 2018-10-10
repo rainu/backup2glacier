@@ -40,6 +40,7 @@ func (a *actionGet) Validate(cfg *config.Config) {
 	}
 
 	ValidateDatabase(&cfg.Get.DatabaseConfig)
+	ValidateAWS(&cfg.Get.AwsGeneralConfig)
 }
 
 func isValidTier(tier string) bool {

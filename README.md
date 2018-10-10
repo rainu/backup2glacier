@@ -3,11 +3,37 @@ A CLI-Tool for uploading (encrypted) backups to AWS-Glacier
 
 ## Installation
 
+0. First you need a AWS user for programmatic access. How it goes you can find here: [Creating an IAM User in Your AWS Account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html).
+    0. The user needs full glacier rights. Just gave him the role **AmazonGlacierFullAccess**.
+0. Create a vault. How it goes see: [Create a Vault in Amazon Glacier](https://docs.aws.amazon.com/amazonglacier/latest/dev/getting-started-create-vault.html)
+0. You have to create your AWS config files like described here: [Configuration and Credential Files](https://docs.aws.amazon.com/cli/latest/userguide/cli-config-files.html)
+0. Download the binary of [backup2glacier](#) or [build on your own](#Development setup)
 
-## Usage example
+## Usage
 
+Upload a backup to glacier
+```bash
+./backup2glacier CREATE <file or dir to backup> <vault name>
+```
 
-## Documentation
+Show Backups
+```bash
+./backup2glacier LIST
+```
+
+Download a backup to glacier
+```bash
+./backup2glacier GET <BackupID> <target file on your desk>
+```
+
+More information
+```bash
+./backup2glacier -h
+./backup2glacier CREATE -h
+./backup2glacier LIST -h
+./backup2glacier SHOW -h
+./backup2glacier GET -h
+```
 
 ## Development setup
 
@@ -29,8 +55,8 @@ go build
 
 * 0.0.1
     * CLI Command for uploading backups
+    * CLI Command for downloading backups
     * CLI Command for list backups
-    * CLI COmmand for downloding backups
 
 ## Meta
 

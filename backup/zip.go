@@ -23,6 +23,7 @@ func Zip(filePath string, dst io.Writer, contentChan chan<- *ZipContent) {
 	zipWriter.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
 		return flate.NewWriter(out, flate.BestCompression)
 	})
+	defer zipWriter.Close()
 
 	fInfo, err := os.Stat(filePath)
 	if err != nil {

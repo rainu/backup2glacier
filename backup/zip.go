@@ -28,16 +28,17 @@ func Zip(filePaths []string, dst io.Writer, contentChan chan<- *ZipContent) {
 	defer zipWriter.Close()
 
 	for _, filePath := range filePaths {
+		absFilePath, _ := filepath.Abs(filePath)
 		fInfo, err := os.Stat(filePath)
 		if err != nil {
 			LogFatal("Could not read file information for '%s'. Error: %v", filePath, err)
 		}
 
 		if fInfo.IsDir() {
-			addFiles(zipWriter, filePath, "", contentChan)
+			addFiles(zipWriter, absFilePath+"/", filepath.Dir(absFilePath+"/")+"/", contentChan)
 		} else {
-			dir, name := filepath.Split(filePath)
-			addFile(zipWriter, dir, "", name, contentChan)
+			dir, name := filepath.Split(absFilePath)
+			addFile(zipWriter, dir, dir+"/", name, contentChan)
 		}
 	}
 

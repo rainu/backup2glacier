@@ -109,10 +109,9 @@ func (b *backupManager) Create(files []string, description, vaultName string) *B
 
 			//store content direct into db
 			b.dbRepository.AddContent(dbBackupEntity, &model.Content{
-				ZipPath:  content.Zippath,
-				RealPath: content.Realpath,
-				Length:   content.Length,
-				ModTime:  content.FileInfo.ModTime(),
+				Path:    content.Realpath,
+				Length:  content.Length,
+				ModTime: content.FileInfo.ModTime(),
 			})
 		}
 	}()

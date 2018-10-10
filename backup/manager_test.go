@@ -27,7 +27,7 @@ func Test_ZipEncryptDecryptUnzip(t *testing.T) {
 	go func() {
 		defer dstZip.Close()
 
-		Zip("./", dstZip, nil)
+		Zip([]string{"./"}, dstZip, nil)
 	}()
 
 	encodedZipFile, err := ioutil.TempFile("", ".enc")

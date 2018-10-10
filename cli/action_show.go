@@ -27,8 +27,7 @@ func (a *actionShow) Do(cfg *config.Config) {
 	}
 
 	tbl, err := prettytable.NewTable(
-		prettytable.Column{Header: "ZIP_PATH"},
-		prettytable.Column{Header: "REAL_PATH"},
+		prettytable.Column{Header: "PATH"},
 		prettytable.Column{Header: "LENGTH"},
 	)
 	if err != nil {
@@ -43,8 +42,7 @@ func (a *actionShow) Do(cfg *config.Config) {
 		}
 
 		err := tbl.AddRow(
-			content.ZipPath,
-			content.RealPath,
+			content.Path,
 			content.Length)
 		if err != nil {
 			panic(err)

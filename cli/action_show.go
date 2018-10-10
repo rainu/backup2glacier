@@ -18,7 +18,7 @@ func NewShowAction() CliAction {
 func (a *actionShow) Do(cfg *config.Config) {
 	dbRepository := database.NewRepository(cfg.Show.Database)
 
-	backup, contentIter := dbRepository.GetById(cfg.Show.BackupId)
+	backup, contentIter := dbRepository.GetBackupContentsById(cfg.Show.BackupId)
 	defer contentIter.Close()
 
 	if backup.ID == 0 {

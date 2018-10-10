@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 const (
@@ -42,7 +43,8 @@ type Backup struct {
 type Content struct {
 	ID       uint `gorm:"primary_key"`
 	BackupID uint
-	ZipPath  string `db:"zip_path" gorm:"type:TEXT"`
-	RealPath string `db:"real_path" gorm:"type:TEXT"`
-	Length   int64  `db:"length"`
+	ZipPath  string    `db:"zip_path" gorm:"type:TEXT"`
+	RealPath string    `db:"real_path" gorm:"type:TEXT"`
+	Length   int64     `db:"length"`
+	ModTime  time.Time `db:"mod"`
 }

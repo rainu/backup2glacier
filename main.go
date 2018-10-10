@@ -10,9 +10,11 @@ func main() {
 
 	var cliAction cli.CliAction
 
-	switch cfg.General.Action {
+	switch cfg.Action {
 	case config.ActionCreate:
 		cliAction = cli.NewCreateAction()
+	case config.ActionGet:
+		cliAction = cli.NewGetAction()
 	case config.ActionShow:
 		cliAction = cli.NewShowAction()
 	case config.ActionList:

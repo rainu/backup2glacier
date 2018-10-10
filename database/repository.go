@@ -20,7 +20,8 @@ type Repository interface {
 
 	Count() int64
 	List() BackupIterator
-	GetById(uint) (*model.Backup, ContentIterator)
+	GetBackupById(uint) *model.Backup
+	GetBackupContentsById(uint) (*model.Backup, ContentIterator)
 }
 
 type repository struct {
@@ -76,7 +77,14 @@ func (r *repository) List() BackupIterator {
 	return newBackupIterator(sqlRows, r.db)
 }
 
-func (r *repository) GetById(id uint) (*model.Backup, ContentIterator) {
+func (r *repository) GetBackupById(id uint) *model.Backup {
+	var backup model.Backup
+	r.db.First(&backup, id)
+
+	return &backup
+}
+
+func (r *repository) GetBackupContentsById(id uint) (*model.Backup, ContentIterator) {
 	var backup model.Backup
 	r.db.First(&backup, id)
 

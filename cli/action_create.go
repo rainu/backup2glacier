@@ -19,7 +19,7 @@ func NewCreateAction() CliAction {
 }
 
 func (a *actionCreate) Do(cfg *config.Config) {
-	b, err := backup.NewBackupManager(
+	b, err := backup.NewBackupCreater(
 		cfg.Create.Password,
 		cfg.Create.SavePassword,
 		cfg.Create.AWSPartSize,

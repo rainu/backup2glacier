@@ -3,6 +3,7 @@ package cli
 import (
 	"backup2glacier/backup"
 	"backup2glacier/config"
+	"backup2glacier/database"
 	. "backup2glacier/log"
 )
 
@@ -27,7 +28,19 @@ func (a *actionGet) Do(cfg *config.Config) {
 	}
 	defer b.Close()
 
-	b.Download(cfg.Get.BackupId, cfg.Get.File)
+	repo := database.NewRepository(cfg.Get.Database)
+	defer repo.Close()
+
+	if e := repo.GetBackupById(cfg.Get.BackupId); e.ID == cfg.Get.BackupId {
+		err := b.Download(cfg.Get.BackupId, cfg.Get.File)
+		if err != nil {
+			LogError("Could not download backup. Error: %v", err)
+		} else {
+			LogInfo("Successfully download backup.")
+		}
+	} else {
+		LogError("Backup not found. Please make sure you took the right one. Use the sub-command %s for do that.", config.ActionList)
+	}
 }
 
 func (a *actionGet) Validate(cfg *config.Config) {

@@ -30,7 +30,13 @@ func (a *actionCreate) Do(cfg *config.Config) {
 	}
 	defer b.Close()
 
-	b.Create(cfg.Create.File, cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
+	result := b.Create(cfg.Create.File, cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
+
+	if result.Error != nil {
+		LogError("Could not upload backup. Error: %v", result.Error)
+	} else {
+		LogInfo("Successfully upload backup. Result: %+v", result)
+	}
 }
 
 func (a *actionCreate) Validate(cfg *config.Config) {

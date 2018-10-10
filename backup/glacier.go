@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
 )
 
 type AWSGlacierUploadResult struct {
@@ -28,8 +29,17 @@ type AWSGlacierUpload struct {
 	PartSize    int
 }
 
+type AWSGlacierDownload struct {
+	Target       io.Writer
+	PollInterval time.Duration
+	VaultName    string
+	ArchiveId    string
+	Tier         string
+}
+
 type AWSGlacier interface {
 	Upload(AWSGlacierUpload) (*AWSGlacierUploadResult, *string, error)
+	Download(AWSGlacierDownload) error
 }
 
 type awsGlacier struct {
@@ -179,4 +189,126 @@ func (a *awsGlacier) completeUpload(vaultName string, uploadId *string, hashes [
 	result, err := a.glacier.CompleteMultipartUpload(request)
 
 	return result, err
+}
+
+func (a *awsGlacier) Download(download AWSGlacierDownload) error {
+	_, err := a.initDownload(download.VaultName, download.ArchiveId, download.Tier)
+	if err != nil {
+		return errors.Wrap(err, "Could not init download job")
+	}
+
+	jobDesc, err := a.determineJobId(download.VaultName, download.ArchiveId)
+	if err != nil {
+		return errors.Wrap(err, "Could not found job. Have you init it before?")
+	}
+
+	err = a.WaitForJob(download.VaultName, *jobDesc.JobId, download.PollInterval)
+	if err != nil {
+		return errors.Wrap(err, "Error while waiting for job completion")
+	}
+
+	err = a.downloadJobOutput(download.VaultName, *jobDesc.JobId, download.Target)
+	if err != nil {
+		return errors.Wrap(err, "Error while downloading job output")
+	}
+
+	return nil
+}
+
+func (a *awsGlacier) initDownload(vaultName, archiveId, tier string) (string, error) {
+	//check if we have a running Retrieval-Job
+	glacierJob, _ := a.determineJobId(vaultName, archiveId)
+	if glacierJob != nil {
+		return *glacierJob.JobId, nil
+	}
+
+	request := &glacier.InitiateJobInput{
+		AccountId: aws.String("-"),
+		VaultName: aws.String(vaultName),
+		JobParameters: &glacier.JobParameters{
+			ArchiveId: aws.String(archiveId),
+			Tier:      aws.String(tier),
+			Type:      aws.String("archive-retrieval"),
+		},
+	}
+	LogDebug("Send InitiateJob: %+v", request)
+	result, err := a.glacier.InitiateJob(request)
+
+	if err != nil {
+		return "", errors.Wrap(err, "Error while initialise the archive download job")
+	}
+
+	LogInfo("Complete InitiateJob: %+v", result)
+	return *result.JobId, nil
+}
+
+func (a *awsGlacier) determineJobId(vaultName, archiveId string) (*glacier.JobDescription, error) {
+	request := &glacier.ListJobsInput{
+		AccountId: aws.String("-"),
+		VaultName: aws.String(vaultName),
+	}
+	LogDebug("Send ListJobs: %+v", request)
+
+	result, err := a.glacier.ListJobs(request)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not get list of jobs")
+	}
+
+	LogInfo("Complete ListJobs: %+v", result)
+	for _, jobDesc := range result.JobList {
+		if *jobDesc.ArchiveId == archiveId &&
+			*jobDesc.Action == "ArchiveRetrieval" {
+
+			return jobDesc, nil
+		}
+	}
+
+	return nil, errors.New("No archive retrieval job found")
+}
+
+func (a *awsGlacier) WaitForJob(vaultName, jobId string, pollInterval time.Duration) error {
+	for {
+		request := &glacier.DescribeJobInput{
+			AccountId: aws.String("-"),
+			VaultName: aws.String(vaultName),
+			JobId:     aws.String(jobId),
+		}
+		LogDebug("Send DescribeJob: %+v", request)
+		jobDesc, err := a.glacier.DescribeJob(request)
+		if err != nil {
+			return errors.Wrap(err, "Could not get job status")
+		}
+
+		if *jobDesc.Completed {
+			return nil
+		} else {
+			d := pollInterval.Round(time.Minute)
+			h := d / time.Hour
+			d -= h * time.Hour
+			m := d / time.Minute
+
+			LogInfo("Job is not completed yet. Wait for %02d:%02d", h, m)
+			time.Sleep(pollInterval)
+		}
+	}
+}
+
+func (a *awsGlacier) downloadJobOutput(vaultName, jobId string, target io.Writer) error {
+	request := &glacier.GetJobOutputInput{
+		AccountId: aws.String("-"),
+		VaultName: aws.String(vaultName),
+		JobId:     aws.String(jobId),
+	}
+	LogDebug("Send GetJobOutput: %+v", request)
+	result, err := a.glacier.GetJobOutput(request)
+
+	if err != nil {
+		return errors.Wrap(err, "Could not get job output")
+	}
+	defer result.Body.Close()
+
+	LogInfo("Complete GetJobOutput: %+v", result)
+	io.Copy(target, result.Body)
+
+	return nil
 }

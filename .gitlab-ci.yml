@@ -1,0 +1,19 @@
+stages:
+  - build
+
+build-binary:
+  image: golang:1.10
+  stage: build
+  script:
+    - export GOPATH=$(pwd)/build
+    - mkdir -p build/src/
+    - cd build/src/
+    - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+    - cd backup2glacier
+    - CGO_ENABLED=0
+    - GOOS=linux
+    - go get ./...
+    - go build -a -installsuffix cgo -o backup2glacier .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier

@@ -24,7 +24,7 @@ type BackupResult struct {
 type BackupCreater interface {
 	io.Closer
 
-	Create(file, description, vaultName string) *BackupResult
+	Create(files []string, description, vaultName string) *BackupResult
 }
 
 type BackupGetter interface {
@@ -36,7 +36,7 @@ type BackupGetter interface {
 type BackupManager interface {
 	io.Closer
 
-	Create(file, description, vaultName string) *BackupResult
+	Create(files []string, description, vaultName string) *BackupResult
 	Download(backupId uint, target string) error
 }
 
@@ -80,7 +80,7 @@ func (b *backupManager) Close() error {
 	return b.dbRepository.Close()
 }
 
-func (b *backupManager) Create(file, description, vaultName string) *BackupResult {
+func (b *backupManager) Create(files []string, description, vaultName string) *BackupResult {
 	// folder/file -> zip -> encrypt -> glacier
 	srcZip, dstZip := io.Pipe()
 	srcCrypt, dstCrypt := io.Pipe()
@@ -98,7 +98,7 @@ func (b *backupManager) Create(file, description, vaultName string) *BackupResul
 		defer wg.Done()
 		defer dstZip.Close()
 
-		Zip(file, dstZip, contentChan)
+		Zip(files, dstZip, contentChan)
 	}()
 	go func() {
 		for {

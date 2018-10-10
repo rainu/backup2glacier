@@ -35,7 +35,7 @@ func Test_Zip(t *testing.T) {
 		}
 	}()
 
-	Zip("./", tmpFile, contentChan)
+	Zip([]string{"./"}, tmpFile, contentChan)
 
 	wg.Wait()
 	assert.True(t, containsTestFile)

@@ -30,9 +30,9 @@ type CreateConfig struct {
 	DatabaseConfig
 	AwsGeneralConfig
 
-	File string `arg:"positional,env:FILE,help:The file or folder to backup."`
+	AWSVaultName string   `arg:"positional,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
+	Files        []string `arg:"positional,env:FILE,help:The file or folder to backup."`
 
-	AWSVaultName          string `arg:"positional,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
 	AWSPartSize           int    `arg:"--aws-part-size,env:AWS_PART_SIZE,help:The size of each part (except the last) in MiB."`
 	AWSArchiveDescription string `arg:"-d,env:AWS_ARCHIVE_DESC,help:The description of the archive."`
 

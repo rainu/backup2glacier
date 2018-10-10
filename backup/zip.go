@@ -19,7 +19,7 @@ type ZipContent struct {
 }
 
 //ZIP the given file/folder and write file information out in given channel
-func Zip(filePath string, dst io.Writer, contentChan chan<- *ZipContent) {
+func Zip(filePaths []string, dst io.Writer, contentChan chan<- *ZipContent) {
 	// Create a new zip archive.
 	zipWriter := zip.NewWriter(dst)
 	zipWriter.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
@@ -27,16 +27,18 @@ func Zip(filePath string, dst io.Writer, contentChan chan<- *ZipContent) {
 	})
 	defer zipWriter.Close()
 
-	fInfo, err := os.Stat(filePath)
-	if err != nil {
-		LogFatal("Could not read file information for '%s'. Error: %v", filePath, err)
-	}
+	for _, filePath := range filePaths {
+		fInfo, err := os.Stat(filePath)
+		if err != nil {
+			LogFatal("Could not read file information for '%s'. Error: %v", filePath, err)
+		}
 
-	if fInfo.IsDir() {
-		addFiles(zipWriter, filePath, "", contentChan)
-	} else {
-		dir, name := filepath.Split(filePath)
-		addFile(zipWriter, dir, "", name, contentChan)
+		if fInfo.IsDir() {
+			addFiles(zipWriter, filePath, "", contentChan)
+		} else {
+			dir, name := filepath.Split(filePath)
+			addFile(zipWriter, dir, "", name, contentChan)
+		}
 	}
 
 	if contentChan != nil {

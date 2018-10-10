@@ -30,7 +30,7 @@ func (a *actionCreate) Do(cfg *config.Config) {
 	}
 	defer b.Close()
 
-	result := b.Create(cfg.Create.File, cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
+	result := b.Create(cfg.Create.Files, cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
 
 	if result.Error != nil {
 		LogError("Could not upload backup. Error: %v", result.Error)
@@ -40,7 +40,7 @@ func (a *actionCreate) Do(cfg *config.Config) {
 }
 
 func (a *actionCreate) Validate(cfg *config.Config) {
-	if cfg.Create.File == "" {
+	if len(cfg.Create.Files) == 0 {
 		cfg.Create.Fail("No file given!")
 	}
 
@@ -55,7 +55,7 @@ func (a *actionCreate) Validate(cfg *config.Config) {
 	}
 
 	if cfg.Create.AWSArchiveDescription == "" {
-		cfg.Create.AWSArchiveDescription = "Backup " + cfg.Create.File + " to " + cfg.Create.AWSVaultName
+		cfg.Create.AWSArchiveDescription = fmt.Sprintf("Backup %v to %s", cfg.Create.Files, cfg.Create.AWSVaultName)
 	}
 
 	ValidateDatabase(&cfg.Create.DatabaseConfig)

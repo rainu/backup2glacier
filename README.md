@@ -13,7 +13,7 @@ A CLI-Tool for uploading (encrypted) backups to AWS-Glacier
 
 Upload a backup to glacier
 ```bash
-./backup2glacier CREATE <file or dir to backup> <vault name>
+./backup2glacier CREATE <vault name> [<file or dir to backup>, ...]
 ```
 
 Show Backups

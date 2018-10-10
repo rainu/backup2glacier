@@ -8,12 +8,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type ZipContent struct {
 	Zippath  string
 	Realpath string
 	Length   int64
+	FileInfo os.FileInfo
 }
 
 //ZIP the given file/folder and write file information out in given channel
@@ -34,15 +36,7 @@ func Zip(filePath string, dst io.Writer, contentChan chan<- *ZipContent) {
 		addFiles(zipWriter, filePath, "", contentChan)
 	} else {
 		dir, name := filepath.Split(filePath)
-		written := addFile(zipWriter, dir, "", name)
-
-		if contentChan != nil {
-			contentChan <- &ZipContent{
-				Zippath:  "/" + name,
-				Realpath: filePath,
-				Length:   written,
-			}
-		}
+		addFile(zipWriter, dir, "", name, contentChan)
 	}
 
 	if contentChan != nil {
@@ -61,42 +55,65 @@ func addFiles(w *zip.Writer, basePath, baseInZip string, contentChan chan<- *Zip
 		if fileDesc.IsDir() {
 			// recursion ahead!
 			newBase := basePath + fileDesc.Name() + "/"
-			addFiles(w, newBase, fileDesc.Name()+"/", contentChan)
+			addFiles(w, newBase, baseInZip+"/"+fileDesc.Name()+"/", contentChan)
 		} else {
-			written := addFile(w, basePath, baseInZip, fileDesc.Name())
-
-			if contentChan != nil {
-				contentChan <- &ZipContent{
-					Zippath:  baseInZip + "/" + fileDesc.Name(),
-					Realpath: basePath + "/" + fileDesc.Name(),
-					Length:   written,
-				}
-
-			}
+			addFile(w, basePath, baseInZip, fileDesc.Name(), contentChan)
 		}
 	}
 }
 
-func addFile(w *zip.Writer, basePath, baseInZip, fileName string) int64 {
+func addFile(w *zip.Writer, basePath, baseInZip, fileName string, contentChan chan<- *ZipContent) int64 {
 	//open for reading
-	osFile, err := os.Open(basePath + fileName)
+	filePath := normalizeFilePath(basePath + fileName)
+	zipPath := normalizeZipPath(baseInZip + fileName)
+
+	osFile, err := os.Open(filePath)
 	if err != nil {
-		LogFatal("Could not open file '%s'. Error: %v", basePath+fileName, err)
+		LogFatal("Could not open file '%s'. Error: %v", filePath, err)
 	}
 	defer osFile.Close()
 
-	LogInfo("Add to zip: %s", osFile.Name())
+	LogInfo("Add to zip: %s -> %s", osFile.Name(), zipPath)
 
 	// Add some files to the archive.
-	zipFileHandle, err := w.Create(baseInZip + fileName)
+	fileInfo, err := osFile.Stat()
 	if err != nil {
-		LogFatal("Could not add file '%s' to zip. Error %v", baseInZip+fileName, err)
+		LogFatal("Could not read file metadata for %s. Error: %v", filePath, err)
+	}
+
+	zipFileInfo, err := zip.FileInfoHeader(fileInfo)
+	if err != nil {
+		LogFatal("Could not create fileinfo header for %s. Error: %v", zipPath, err)
+	}
+	zipFileInfo.Name = zipPath
+
+	zipFileHandle, err := w.CreateHeader(zipFileInfo)
+	if err != nil {
+		LogFatal("Could not add file '%s' to zip. Error %v", zipPath, err)
 	}
 
 	written, err := io.Copy(zipFileHandle, osFile)
 	if err != nil {
-		LogFatal("Could not add file '%s' to zip. Error %v", baseInZip+fileName, err)
+		LogFatal("Could not add file '%s' to zip. Error %v", zipPath, err)
+	}
+
+	if contentChan != nil {
+		contentChan <- &ZipContent{
+			Zippath:  zipPath,
+			Realpath: filePath,
+			Length:   written,
+			FileInfo: fileInfo,
+		}
 	}
 
 	return written
+}
+
+func normalizeFilePath(path string) string {
+	return strings.Replace(path, "//", "/", -1)
+}
+
+func normalizeZipPath(path string) string {
+	result := strings.Replace("/"+path, "//", "/", -1)
+	return result[1:]
 }

@@ -3,8 +3,9 @@ package cli
 import (
 	"backup2glacier/config"
 	"backup2glacier/database"
+	"encoding/csv"
 	"fmt"
-	"github.com/tatsushid/go-prettytable"
+	"os"
 	"time"
 )
 
@@ -24,29 +25,6 @@ func (a *actionShow) Do(cfg *config.Config) {
 	if backup.ID == 0 {
 		//Not found!
 		return
-	}
-
-	tbl, err := prettytable.NewTable(
-		prettytable.Column{Header: "PATH"},
-		prettytable.Column{Header: "LENGTH"},
-	)
-	if err != nil {
-		panic(err)
-	}
-	tbl.Separator = " | "
-
-	for {
-		content, next := contentIter.Next()
-		if !next {
-			break
-		}
-
-		err := tbl.AddRow(
-			content.Path,
-			content.Length)
-		if err != nil {
-			panic(err)
-		}
 	}
 
 	fmt.Printf(`Id: %d
@@ -72,7 +50,32 @@ Content:
 		backup.Password,
 		backup.Error)
 
-	tbl.Print()
+	w := csv.NewWriter(os.Stdout)
+	w.UseCRLF = true
+	w.Comma = ';'
+
+	err := w.Write([]string{"PATH", "LENGTH", "MODIFY"})
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		content, next := contentIter.Next()
+		if !next {
+			break
+		}
+
+		w.Write([]string{
+			content.Path,
+			fmt.Sprintf("%d", content.Length),
+			content.ModTime.Format(time.RFC3339),
+		})
+
+		if err != nil {
+			panic(err)
+		}
+	}
+	w.Flush()
 }
 
 func (a *actionShow) Validate(cfg *config.Config) {

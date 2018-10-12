@@ -127,14 +127,14 @@ prepare-deploy-github:
   stage: predeploy
   script:
     - go get github.com/aktau/github-release
-    - github-release release -v --tag ${RELEASE_TAG} --description "automatic built builds"
+    - github-release -v release --tag ${RELEASE_TAG} --description "automatic built builds"
 
 deploy-github-linux-386:
   image: golang:1.10
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-linux-386 -f ${CI_PROJECT_DIR}/backup2glacier-linux-386
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-linux-386 -f ${CI_PROJECT_DIR}/backup2glacier-linux-386
   dependencies:
     - build-linux-386
 
@@ -143,7 +143,7 @@ deploy-github-linux-amd64:
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-linux-amd64 -f ${CI_PROJECT_DIR}/backup2glacier-linux-amd64
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-linux-amd64 -f ${CI_PROJECT_DIR}/backup2glacier-linux-amd64
   dependencies:
     - build-linux-amd64
 
@@ -152,7 +152,7 @@ deploy-github-linux-arm:
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-linux-arm -f ${CI_PROJECT_DIR}/backup2glacier-linux-arm
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-linux-arm -f ${CI_PROJECT_DIR}/backup2glacier-linux-arm
   dependencies:
     - build-linux-arm
 
@@ -161,7 +161,7 @@ deploy-github-linux-arm64:
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-linux-arm64 -f ${CI_PROJECT_DIR}/backup2glacier-linux-arm64
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-linux-arm64 -f ${CI_PROJECT_DIR}/backup2glacier-linux-arm64
   dependencies:
     - build-linux-arm64
 
@@ -170,7 +170,7 @@ deploy-github-windows-386:
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-windows-386 -f ${CI_PROJECT_DIR}/backup2glacier-windows-386
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-windows-386 -f ${CI_PROJECT_DIR}/backup2glacier-windows-386
   dependencies:
     - build-windows-386
 
@@ -179,6 +179,6 @@ deploy-github-windows-amd64:
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload -v --tag ${RELEASE_TAG} -n backup2glacier-windows-amd64 -f ${CI_PROJECT_DIR}/backup2glacier-windows-amd64
+    - github-release -v upload --tag ${RELEASE_TAG} -n backup2glacier-windows-amd64 -f ${CI_PROJECT_DIR}/backup2glacier-windows-amd64
   dependencies:
     - build-windows-amd64

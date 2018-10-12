@@ -1,7 +1,8 @@
 stages:
   - build
+  - deploy
 
-build-binary:
+build-linux-368:
   image: golang:1.10
   stage: build
   script:
@@ -12,8 +13,118 @@ build-binary:
     - cd backup2glacier
     - CGO_ENABLED=0
     - GOOS=linux
+    - GOARCH=386
     - go get ./...
-    - go build -a -installsuffix cgo -o backup2glacier .
+    - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
   artifacts:
     paths:
-    - ${CI_PROJECT_DIR}/backup2glacier
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+
+build-linux-amd64:
+  image: golang:1.10
+  stage: build
+  script:
+    - export GOPATH=$(pwd)/build
+    - mkdir -p build/src/
+    - cd build/src/
+    - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+    - cd backup2glacier
+    - CGO_ENABLED=0
+    - GOOS=linux
+    - GOARCH=amd64
+    - go get ./...
+    - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+    expire_in: 10min
+
+build-linux-arm:
+  image: golang:1.10
+  stage: build
+  script:
+    - export GOPATH=$(pwd)/build
+    - mkdir -p build/src/
+    - cd build/src/
+    - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+    - cd backup2glacier
+    - CGO_ENABLED=0
+    - GOOS=linux
+    - GOARCH=arm
+    - go get ./...
+    - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+    expire_in: 10min
+
+build-linux-arm64:
+  image: golang:1.10
+  stage: build
+  script:
+    - export GOPATH=$(pwd)/build
+    - mkdir -p build/src/
+    - cd build/src/
+    - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+    - cd backup2glacier
+    - CGO_ENABLED=0
+    - GOOS=linux
+    - GOARCH=arm64
+    - go get ./...
+    - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+    expire_in: 10min
+
+build-windows-368:
+  image: golang:1.10
+  stage: build
+  script:
+  - export GOPATH=$(pwd)/build
+  - mkdir -p build/src/
+  - cd build/src/
+  - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+  - cd backup2glacier
+  - CGO_ENABLED=0
+  - GOOS=windows
+  - GOARCH=386
+  - go get ./...
+  - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+    expire_in: 10min
+
+build-windows-amd64:
+  image: golang:1.10
+  stage: build
+  script:
+  - export GOPATH=$(pwd)/build
+  - mkdir -p build/src/
+  - cd build/src/
+  - ln -s ${CI_PROJECT_DIR} ./backup2glacier
+  - cd backup2glacier
+  - CGO_ENABLED=0
+  - GOOS=windows
+  - GOARCH=amd64
+  - go get ./...
+  - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  artifacts:
+    paths:
+    - ${CI_PROJECT_DIR}/backup2glacier-*
+    expire_in: 10min
+
+deploy-github:
+  image: golang:1.10
+  stage: deploy
+  script:
+    - go get github.com/aktau/github-release
+    - ls -la ${CI_PROJECT_DIR}/backup2glacier-*
+  dependencies:
+    - build-linux-368
+    - build-linux-amd64
+    - build-linux-arm
+    - build-linux-arm64
+    - build-windows-368
+    - build-windows-amd64

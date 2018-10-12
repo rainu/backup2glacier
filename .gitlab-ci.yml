@@ -8,7 +8,7 @@ stages:
   - predeploy
   - deploy
 
-build-linux-368:
+build-linux-386:
   image: golang:1.10
   stage: build
   script:
@@ -84,7 +84,7 @@ build-linux-arm64:
     - ${CI_PROJECT_DIR}/backup2glacier-*
     expire_in: 30min
 
-build-windows-368:
+build-windows-386:
   image: golang:1.10
   stage: build
   script:
@@ -129,14 +129,14 @@ prepare-deploy-github:
     - go get github.com/aktau/github-release
     - github-release release --tag ${RELEASE_TAG} --description "automatic built builds"
 
-deploy-github-linux-368:
+deploy-github-linux-386:
   image: golang:1.10
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload --tag ${RELEASE_TAG} -n backup2glacier-linux-368 -f ${CI_PROJECT_DIR}/backup2glacier-linux-368
+    - github-release upload --tag ${RELEASE_TAG} -n backup2glacier-linux-386 -f ${CI_PROJECT_DIR}/backup2glacier-linux-386
   dependencies:
-    - build-linux-368
+    - build-linux-386
 
 deploy-github-linux-amd64:
   image: golang:1.10
@@ -165,14 +165,14 @@ deploy-github-linux-arm64:
   dependencies:
     - build-linux-arm64
 
-deploy-github-windows-368:
+deploy-github-windows-386:
   image: golang:1.10
   stage: deploy
   script:
     - go get github.com/aktau/github-release
-    - github-release upload --tag ${RELEASE_TAG} -n backup2glacier-windows-368 -f ${CI_PROJECT_DIR}/backup2glacier-windows-368
+    - github-release upload --tag ${RELEASE_TAG} -n backup2glacier-windows-386 -f ${CI_PROJECT_DIR}/backup2glacier-windows-386
   dependencies:
-    - build-windows-368
+    - build-windows-386
 
 deploy-github-windows-amd64:
   image: golang:1.10

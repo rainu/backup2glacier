@@ -12,6 +12,7 @@ const (
 	ActionList   = "LIST"
 	ActionShow   = "SHOW"
 	ActionGet    = "GET"
+	ActionDelete = "DELETE"
 )
 
 const DefaultDatabase = "~/.aws/backup2glacier/database.db"
@@ -21,6 +22,7 @@ type Config struct {
 
 	Create *CreateConfig
 	Get    *GetConfig
+	Delete *DeleteConfig
 	Show   *ShowConfig
 	List   *ListConfig
 }
@@ -73,6 +75,17 @@ type GetConfig struct {
 	argParser *arg.Parser `arg:"-"`
 }
 
+type DeleteConfig struct {
+	GeneralConfig
+	DatabaseConfig
+	AwsGeneralConfig
+
+	BackupId uint `arg:"positional,required,env:BACKUP_ID,help:The id of the backup to get."`
+	DontAsk  bool `arg:"-y,env:DONT_ASK,help:Dont ask if you be sure to delete backup."`
+
+	argParser *arg.Parser `arg:"-"`
+}
+
 type GeneralConfig struct {
 	LogLevel string `arg:"-l,env:LOG_LEVEL,help:The log level."`
 }
@@ -90,13 +103,13 @@ func NewConfig() *Config {
 	cfg := &Config{}
 
 	if len(os.Args) <= 1 {
-		fmt.Printf("You have to specify a subcommand: %v\n", []string{ActionCreate, ActionGet, ActionList, ActionShow})
+		fmt.Printf("You have to specify a subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow})
 		os.Exit(2)
 	}
 	cfg.Action = os.Args[1]
 
 	if !isValidAction(cfg.Action) {
-		fmt.Printf("You have to specify a valid subcommand: %v\n", []string{ActionCreate, ActionGet, ActionList, ActionShow})
+		fmt.Printf("You have to specify a valid subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow})
 		os.Exit(2)
 	}
 
@@ -153,6 +166,20 @@ func NewConfig() *Config {
 
 		cfg.Show.argParser, _ = arg.NewParser(arg.Config{}, cfg.Show)
 		cfg.Show.argParser.Parse(os.Args[2:])
+	case ActionDelete:
+		cfg.Delete = &DeleteConfig{
+			GeneralConfig: GeneralConfig{
+				LogLevel: "INFO",
+			},
+			DatabaseConfig: DatabaseConfig{
+				Database: DefaultDatabase,
+			},
+
+			DontAsk: false,
+		}
+
+		cfg.Delete.argParser, _ = arg.NewParser(arg.Config{}, cfg.Delete)
+		cfg.Delete.argParser.Parse(os.Args[2:])
 	}
 
 	return cfg
@@ -162,6 +189,9 @@ func (c *CreateConfig) Fail(format string, args ...interface{}) {
 	failInternal(c.argParser, format, args...)
 }
 func (c *GetConfig) Fail(format string, args ...interface{}) {
+	failInternal(c.argParser, format, args...)
+}
+func (c *DeleteConfig) Fail(format string, args ...interface{}) {
 	failInternal(c.argParser, format, args...)
 }
 func (c *ListConfig) Fail(format string, args ...interface{}) {
@@ -181,6 +211,8 @@ func isValidAction(action string) bool {
 	case ActionCreate:
 		fallthrough
 	case ActionGet:
+		fallthrough
+	case ActionDelete:
 		fallthrough
 	case ActionShow:
 		fallthrough

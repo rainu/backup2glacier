@@ -22,6 +22,7 @@ type Repository interface {
 	List() BackupIterator
 	GetBackupById(uint) *model.Backup
 	GetBackupContentsById(uint) (*model.Backup, ContentIterator)
+	DeleteBackupById(uint)
 }
 
 type repository struct {
@@ -94,4 +95,12 @@ func (r *repository) GetBackupContentsById(id uint) (*model.Backup, ContentItera
 	}
 
 	return &backup, newContentIterator(sqlRows, r.db)
+}
+
+func (r *repository) DeleteBackupById(id uint) {
+	backup := r.GetBackupById(id)
+	if backup != nil {
+		r.db.Where(&model.Content{BackupID: id}).Delete(&model.Content{})
+		r.db.Delete(backup)
+	}
 }

@@ -33,11 +33,16 @@ type BackupGetter interface {
 	Download(backupId uint, target string) error
 }
 
+type BackupDeleter interface {
+	Delete(backupId uint) error
+}
+
 type BackupManager interface {
 	io.Closer
 
 	Create(files []string, description, vaultName string) *BackupResult
 	Download(backupId uint, target string) error
+	Delete(backupId uint) error
 }
 
 type backupManager struct {
@@ -57,6 +62,10 @@ func NewBackupCreater(pw string, savePw bool, partSize int, dbUrl string) (Backu
 
 func NewBackupGetter(pw *string, tier string, pollInterval time.Duration, dbUrl string) (BackupGetter, error) {
 	return NewBackupManager(pw, false, 0, pollInterval, tier, dbUrl)
+}
+
+func NewBackupDeleter(dbUrl string) (BackupDeleter, error) {
+	return NewBackupManager(nil, false, 0, 0, "", dbUrl)
 }
 
 func NewBackupManager(pw *string, savePw bool, partSize int, pollInterval time.Duration, tier, dbUrl string) (BackupManager, error) {
@@ -266,5 +275,23 @@ func (b *backupManager) ensureTarget(target string) error {
 		}
 	}
 
+	return nil
+}
+
+func (b *backupManager) Delete(backupId uint) error {
+	toDelete := b.dbRepository.GetBackupById(backupId)
+	if toDelete.ArchiveId == nil {
+		return errors.New("The backup has no archiveId. Was the upload successful?")
+	}
+
+	err := b.glacier.Delete(AWSGlacierDelete{
+		VaultName: toDelete.Vault,
+		ArchiveId: *toDelete.ArchiveId,
+	})
+	if err != nil {
+		return errors.Wrap(err, "Could not delete archive")
+	}
+
+	b.dbRepository.DeleteBackupById(backupId)
 	return nil
 }

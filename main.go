@@ -19,6 +19,8 @@ func main() {
 		cliAction = cli.NewCreateAction()
 	case config.ActionGet:
 		cliAction = cli.NewGetAction()
+	case config.ActionDelete:
+		cliAction = cli.NewDeleteAction()
 	case config.ActionShow:
 		cliAction = cli.NewShowAction()
 	case config.ActionList:

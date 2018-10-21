@@ -37,9 +37,15 @@ type AWSGlacierDownload struct {
 	Tier         string
 }
 
+type AWSGlacierDelete struct {
+	VaultName string
+	ArchiveId string
+}
+
 type AWSGlacier interface {
 	Upload(AWSGlacierUpload) (*AWSGlacierUploadResult, *string, error)
 	Download(AWSGlacierDownload) error
+	Delete(AWSGlacierDelete) error
 }
 
 type awsGlacier struct {
@@ -309,6 +315,23 @@ func (a *awsGlacier) downloadJobOutput(vaultName, jobId string, target io.Writer
 
 	LogInfo("Complete GetJobOutput: %+v", result)
 	io.Copy(target, result.Body)
+
+	return nil
+}
+
+func (a *awsGlacier) Delete(delete AWSGlacierDelete) error {
+	request := &glacier.DeleteArchiveInput{
+		AccountId: aws.String("-"),
+		VaultName: aws.String(delete.VaultName),
+		ArchiveId: aws.String(delete.ArchiveId),
+	}
+	LogDebug("Send DeleteArchive: %+v", request)
+	result, err := a.glacier.DeleteArchive(request)
+
+	if err != nil {
+		return errors.Wrap(err, "Could not delete archive")
+	}
+	LogInfo("Complete DeleteArchive: %+v", result)
 
 	return nil
 }

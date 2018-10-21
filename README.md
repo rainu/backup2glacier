@@ -53,6 +53,8 @@ go build
 
 ## Release History
 
+* 0.0.2
+    * CLI Command for delete backups
 * 0.0.1
     * CLI Command for uploading backups
     * CLI Command for downloading backups

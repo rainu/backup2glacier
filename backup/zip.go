@@ -31,7 +31,8 @@ func Zip(filePaths []string, dst io.Writer, contentChan chan<- *ZipContent) {
 		absFilePath, _ := filepath.Abs(filePath)
 		fInfo, err := os.Stat(filePath)
 		if err != nil {
-			LogFatal("Could not read file information for '%s'. Error: %v", filePath, err)
+			LogError("Could not read file information for '%s'. Error: %v", filePath, err)
+			continue
 		}
 
 		if fInfo.IsDir() {
@@ -51,7 +52,8 @@ func addFiles(w *zip.Writer, basePath, baseInZip string, contentChan chan<- *Zip
 	// Open the Directory
 	files, err := ioutil.ReadDir(basePath)
 	if err != nil {
-		LogFatal("Could not list directory '%s'. Error: %v", basePath, err)
+		LogError("Could not list directory '%s'. Error: %v", basePath, err)
+		return
 	}
 
 	for _, fileDesc := range files {
@@ -72,7 +74,8 @@ func addFile(w *zip.Writer, basePath, baseInZip, fileName string, contentChan ch
 
 	osFile, err := os.Open(filePath)
 	if err != nil {
-		LogFatal("Could not open file '%s'. Error: %v", filePath, err)
+		LogError("Could not open file '%s'. Error: %v", filePath, err)
+		return 0
 	}
 	defer osFile.Close()
 
@@ -81,23 +84,27 @@ func addFile(w *zip.Writer, basePath, baseInZip, fileName string, contentChan ch
 	// Add some files to the archive.
 	fileInfo, err := osFile.Stat()
 	if err != nil {
-		LogFatal("Could not read file metadata for %s. Error: %v", filePath, err)
+		LogError("Could not read file metadata for %s. Error: %v", filePath, err)
+		return 0
 	}
 
 	zipFileInfo, err := zip.FileInfoHeader(fileInfo)
 	if err != nil {
-		LogFatal("Could not create fileinfo header for %s. Error: %v", zipPath, err)
+		LogError("Could not create fileinfo header for %s. Error: %v", zipPath, err)
+		return 0
 	}
 	zipFileInfo.Name = zipPath
 
 	zipFileHandle, err := w.CreateHeader(zipFileInfo)
 	if err != nil {
-		LogFatal("Could not add file '%s' to zip. Error %v", zipPath, err)
+		LogError("Could not add file '%s' to zip. Error %v", zipPath, err)
+		return 0
 	}
 
 	written, err := io.Copy(zipFileHandle, osFile)
 	if err != nil {
-		LogFatal("Could not add file '%s' to zip. Error %v", zipPath, err)
+		LogError("Could not add file '%s' to zip. Error %v", zipPath, err)
+		return 0
 	}
 
 	if contentChan != nil {

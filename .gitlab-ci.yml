@@ -22,6 +22,7 @@ build-linux-386:
   - GOARCH=386
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*
@@ -41,6 +42,7 @@ build-linux-amd64:
   - GOARCH=amd64
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*
@@ -60,6 +62,7 @@ build-linux-arm:
   - GOARCH=arm
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*
@@ -79,6 +82,7 @@ build-linux-arm64:
   - GOARCH=arm64
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*
@@ -98,6 +102,7 @@ build-windows-386:
   - GOARCH=386
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*
@@ -117,6 +122,7 @@ build-windows-amd64:
   - GOARCH=amd64
   - go get ./...
   - go build -a -installsuffix cgo -o backup2glacier-${GOOS}-${GOARCH} .
+  - chmod +x backup2glacier-${GOOS}-${GOARCH}
   artifacts:
     paths:
     - ${CI_PROJECT_DIR}/backup2glacier-*

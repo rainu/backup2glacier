@@ -1,7 +1,7 @@
 variables:
   GITHUB_USER: rainu
   GITHUB_REPO: backup2glacier
-  RELEASE_TAG: v0.1.0
+  RELEASE_TAG: v0.1.1
 
 stages:
 - build

@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -24,7 +25,7 @@ type BackupResult struct {
 type BackupCreater interface {
 	io.Closer
 
-	Create(files []string, description, vaultName string) *BackupResult
+	Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult
 }
 
 type BackupGetter interface {
@@ -40,7 +41,7 @@ type BackupDeleter interface {
 type BackupManager interface {
 	io.Closer
 
-	Create(files []string, description, vaultName string) *BackupResult
+	Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult
 	Download(backupId uint, target string) error
 	Delete(backupId uint) error
 }
@@ -89,7 +90,7 @@ func (b *backupManager) Close() error {
 	return b.dbRepository.Close()
 }
 
-func (b *backupManager) Create(files []string, description, vaultName string) *BackupResult {
+func (b *backupManager) Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult {
 	// folder/file -> zip -> encrypt -> glacier
 	srcZip, dstZip := io.Pipe()
 	srcCrypt, dstCrypt := io.Pipe()
@@ -107,7 +108,7 @@ func (b *backupManager) Create(files []string, description, vaultName string) *B
 		defer wg.Done()
 		defer dstZip.Close()
 
-		Zip(files, dstZip, contentChan)
+		Zip(files, blacklist, dstZip, contentChan)
 	}()
 	go func() {
 		for {

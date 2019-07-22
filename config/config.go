@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alexflint/go-arg"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type CreateConfig struct {
 
 	AWSVaultName string   `arg:"positional,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
 	Files        []string `arg:"positional,env:FILE,help:The file or folder to backup."`
+	Blacklist    []string `arg:"-b,separate,env:BLACKLIST,help:Regular expressions of files that should be excluded."`
 
 	AWSPartSize           int    `arg:"--aws-part-size,env:AWS_PART_SIZE,help:The size of each part (except the last) in MiB."`
 	AWSArchiveDescription string `arg:"-d,env:AWS_ARCHIVE_DESC,help:The description of the archive."`
@@ -122,7 +124,7 @@ func NewConfig() *Config {
 			DatabaseConfig: DatabaseConfig{
 				Database: DefaultDatabase,
 			},
-			AWSPartSize:  1024 * 1024, //1MB chunk
+			AWSPartSize:  1, //1MB chunk
 			SavePassword: false,
 		}
 
@@ -183,6 +185,16 @@ func NewConfig() *Config {
 	}
 
 	return cfg
+}
+
+func (c *CreateConfig) GetBlacklist() []*regexp.Regexp {
+	var result []*regexp.Regexp
+
+	for _, curEntry := range c.Blacklist {
+		result = append(result, regexp.MustCompile(curEntry))
+	}
+
+	return result
 }
 
 func (c *CreateConfig) Fail(format string, args ...interface{}) {

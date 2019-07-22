@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -35,7 +36,7 @@ func Test_Zip(t *testing.T) {
 		}
 	}()
 
-	Zip([]string{"./"}, tmpFile, contentChan)
+	Zip([]string{"./"}, []*regexp.Regexp{}, tmpFile, contentChan)
 
 	wg.Wait()
 	assert.True(t, containsTestFile)
@@ -53,4 +54,27 @@ func Test_Zip(t *testing.T) {
 		}
 	}
 	assert.True(t, containsTestFile)
+}
+
+func TestBlacklist(t *testing.T) {
+	tests := []struct {
+		name           string
+		blacklist      string
+		testCase       string
+		expectedResult bool
+	}{
+		{"suffixes", `.*\.exe`, "test.exe", true },
+		{"suffixes", `.*\.exe`, "test.exe_", true },
+		{"suffixes", `.*\.exe$`, "test.exe_", false },
+		{"suffixes", `.*\.exe`, "full/path/to/test.exe", true },
+		{"suffixes", `.*\.exe`, ".exe", true },
+		{"suffixes", `.*\.exe`, "exe", false },
+		{"folders", `.*/log/.*`, "/path/to/log/test.txt", true },
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, _ := isBlacklisted(test.testCase, []*regexp.Regexp{regexp.MustCompile(test.blacklist)})
+			assert.Equal(t, result, test.expectedResult)
+		})
+	}
 }

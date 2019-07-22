@@ -53,6 +53,9 @@ go build
 
 ## Release History
 
+* 0.1.1
+    * CLI option for blacklisting files
+    * Correct default value (1) of option for upload part size
 * 0.1.0
     * Backup will not exit on files which does not exists (dead links)
 * 0.0.2

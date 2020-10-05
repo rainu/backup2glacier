@@ -42,4 +42,4 @@ jobs:
           if [ "$GOOS" = "windows" ]; then
             BINARY=$BINARY.exe
           fi
-          go build -a -installsuffix cgo -o $BINARY -v
+          go build -o $BINARY -v

@@ -115,6 +115,9 @@ func NewConfig() *Config {
 		os.Exit(2)
 	}
 
+	var err error
+	var argParser *arg.Parser
+
 	switch cfg.Action {
 	case ActionCreate:
 		cfg.Create = &CreateConfig{
@@ -129,7 +132,8 @@ func NewConfig() *Config {
 		}
 
 		cfg.Create.argParser, _ = arg.NewParser(arg.Config{}, cfg.Create)
-		cfg.Create.argParser.Parse(os.Args[2:])
+		argParser = cfg.Create.argParser
+		err = cfg.Create.argParser.Parse(os.Args[2:])
 	case ActionGet:
 		cfg.Get = &GetConfig{
 			GeneralConfig: GeneralConfig{
@@ -143,7 +147,8 @@ func NewConfig() *Config {
 		}
 
 		cfg.Get.argParser, _ = arg.NewParser(arg.Config{}, cfg.Get)
-		cfg.Get.argParser.Parse(os.Args[2:])
+		argParser = cfg.Get.argParser
+		err = cfg.Get.argParser.Parse(os.Args[2:])
 	case ActionList:
 		cfg.List = &ListConfig{
 			GeneralConfig: GeneralConfig{
@@ -155,7 +160,8 @@ func NewConfig() *Config {
 		}
 
 		cfg.List.argParser, _ = arg.NewParser(arg.Config{}, cfg.List)
-		cfg.List.argParser.Parse(os.Args[2:])
+		argParser = cfg.List.argParser
+		err = cfg.List.argParser.Parse(os.Args[2:])
 	case ActionShow:
 		cfg.Show = &ShowConfig{
 			GeneralConfig: GeneralConfig{
@@ -167,7 +173,8 @@ func NewConfig() *Config {
 		}
 
 		cfg.Show.argParser, _ = arg.NewParser(arg.Config{}, cfg.Show)
-		cfg.Show.argParser.Parse(os.Args[2:])
+		argParser = cfg.Show.argParser
+		err = cfg.Show.argParser.Parse(os.Args[2:])
 	case ActionDelete:
 		cfg.Delete = &DeleteConfig{
 			GeneralConfig: GeneralConfig{
@@ -181,7 +188,13 @@ func NewConfig() *Config {
 		}
 
 		cfg.Delete.argParser, _ = arg.NewParser(arg.Config{}, cfg.Delete)
-		cfg.Delete.argParser.Parse(os.Args[2:])
+		argParser = cfg.Delete.argParser
+		err = cfg.Delete.argParser.Parse(os.Args[2:])
+	}
+
+	if err != nil && err == arg.ErrHelp {
+		argParser.WriteHelp(os.Stdout)
+		os.Exit(0)
 	}
 
 	return cfg

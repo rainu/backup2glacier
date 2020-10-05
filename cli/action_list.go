@@ -37,12 +37,20 @@ func (a *actionList) Do(cfg *config.Config) {
 			break
 		}
 
-		w.Write([]string{
+		var sLength string
+
+		if cfg.List.Factor == 1 {
+			sLength = fmt.Sprintf("%d", backup.Length)
+		} else {
+			sLength = fmt.Sprintf("%.2f", float64(2684354560)/float64(cfg.List.Factor))
+		}
+
+		err = w.Write([]string{
 			fmt.Sprintf("%d", backup.ID),
 			backup.CreatedAt.Format(time.RFC3339),
 			backup.Vault,
 			backup.Description,
-			fmt.Sprintf("%d", backup.Length),
+			sLength,
 			sValue(backup.ArchiveId),
 		})
 		if err != nil {
@@ -54,6 +62,10 @@ func (a *actionList) Do(cfg *config.Config) {
 
 func (a *actionList) Validate(cfg *config.Config) {
 	ValidateDatabase(&cfg.List.DatabaseConfig)
+
+	if cfg.List.Factor < 1 {
+		cfg.List.Factor = 1
+	}
 }
 
 func sValue(value *string) string {

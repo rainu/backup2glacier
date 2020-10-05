@@ -53,6 +53,9 @@ go build
 
 ## Release History
 
+* 0.2.0
+    * Fix CLI help
+    * add option for length factor in LIST command
 * 0.1.1
     * CLI option for blacklisting files
     * Correct default value (1) of option for upload part size

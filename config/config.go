@@ -50,6 +50,14 @@ type ListConfig struct {
 	GeneralConfig
 	DatabaseConfig
 
+	Factor int  `arg:"--factor,env:FACTOR,help:Conversion factor for the size specification. For example: Use 1024 for KiB.Default:1"`
+	Kb     bool `arg:"--kb,env:FACTOR_KB,help:Use KB as conversion factor."`
+	Kib    bool `arg:"--kib,env:FACTOR_KIB,help:Use KiB as conversion factor."`
+	Mb     bool `arg:"--mb,env:FACTOR_MB,help:Use MB as conversion factor."`
+	Mib    bool `arg:"--mib,env:FACTOR_MIB,help:Use MiB as conversion factor."`
+	Gb     bool `arg:"--gb,env:FACTOR_MB,help:Use GB as conversion factor."`
+	Gib    bool `arg:"--gib,env:FACTOR_MIB,help:Use GiB as conversion factor."`
+
 	argParser *arg.Parser `arg:"-"`
 }
 
@@ -159,9 +167,24 @@ func NewConfig() *Config {
 			},
 		}
 
-		cfg.List.argParser, _ = arg.NewParser(arg.Config{}, cfg.List)
+		cfg.List.argParser, err = arg.NewParser(arg.Config{}, cfg.List)
 		argParser = cfg.List.argParser
 		err = cfg.List.argParser.Parse(os.Args[2:])
+		if err == nil {
+			if cfg.List.Kb {
+				cfg.List.Factor = 1000
+			} else if cfg.List.Kib {
+				cfg.List.Factor = 1024
+			} else if cfg.List.Mb {
+				cfg.List.Factor = 1000 * 1000
+			} else if cfg.List.Mib {
+				cfg.List.Factor = 1024 * 1024
+			} else if cfg.List.Gb {
+				cfg.List.Factor = 1000 * 1000 * 1000
+			} else if cfg.List.Gib {
+				cfg.List.Factor = 1024 * 1024 * 1024
+			}
+		}
 	case ActionShow:
 		cfg.Show = &ShowConfig{
 			GeneralConfig: GeneralConfig{

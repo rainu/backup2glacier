@@ -35,7 +35,6 @@ jobs:
           fi
       - name: Build
         env:
-          CGO_ENABLED: 0
           GOOS: ${{ matrix.go-os }}
           GOARCH: ${{ matrix.go-arch }}
         run: |

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"reflect"
+	"time"
 )
 
 type Repository interface {
@@ -22,6 +23,7 @@ type Repository interface {
 	List() BackupIterator
 	GetBackupById(uint) *model.Backup
 	GetBackupContentsById(uint) (*model.Backup, ContentIterator)
+	GetOlderThan(string, time.Time) BackupIterator
 	DeleteBackupById(uint)
 }
 
@@ -71,6 +73,18 @@ func (r *repository) Count() int64 {
 
 func (r *repository) List() BackupIterator {
 	sqlRows, err := r.db.Model(&model.Backup{}).Rows()
+	if err != nil {
+		panic(errors.Wrap(err, "Error while creating rows"))
+	}
+
+	return newBackupIterator(sqlRows, r.db)
+}
+
+func (r *repository) GetOlderThan(vault string, time time.Time) BackupIterator {
+	sqlRows, err := r.db.Model(&model.Backup{}).
+		Where(model.ColumnBackupVault+" = ? AND "+model.ColumnCreatedAt+" < ?", vault, time).
+		Rows()
+
 	if err != nil {
 		panic(errors.Wrap(err, "Error while creating rows"))
 	}

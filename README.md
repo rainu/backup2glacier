@@ -26,6 +26,11 @@ Download a backup to glacier
 ./backup2glacier GET <BackupID> <target file on your desk>
 ```
 
+Delete Backups older than 30 days
+```bash
+./backup2glacier CURATOR <vaultname> --max-age 30
+```
+
 More information
 ```bash
 ./backup2glacier -h
@@ -33,6 +38,7 @@ More information
 ./backup2glacier LIST -h
 ./backup2glacier SHOW -h
 ./backup2glacier GET -h
+./backup2glacier CURATOR -h
 ```
 
 ## Development setup
@@ -56,6 +62,7 @@ go build
 * 0.2.0
     * Fix CLI help
     * add option for length factor in LIST command
+    * CLI Command for curator backups
 * 0.1.1
     * CLI option for blacklisting files
     * Correct default value (1) of option for upload part size

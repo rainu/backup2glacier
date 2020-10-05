@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	ActionCreate = "CREATE"
-	ActionList   = "LIST"
-	ActionShow   = "SHOW"
-	ActionGet    = "GET"
-	ActionDelete = "DELETE"
+	ActionCreate  = "CREATE"
+	ActionList    = "LIST"
+	ActionShow    = "SHOW"
+	ActionGet     = "GET"
+	ActionDelete  = "DELETE"
+	ActionCurator = "CURATOR"
 )
 
 const DefaultDatabase = "~/.aws/backup2glacier/database.db"
@@ -21,11 +22,12 @@ const DefaultDatabase = "~/.aws/backup2glacier/database.db"
 type Config struct {
 	Action string
 
-	Create *CreateConfig
-	Get    *GetConfig
-	Delete *DeleteConfig
-	Show   *ShowConfig
-	List   *ListConfig
+	Create  *CreateConfig
+	Get     *GetConfig
+	Delete  *DeleteConfig
+	Show    *ShowConfig
+	List    *ListConfig
+	Curator *CuratorConfig
 }
 
 type CreateConfig struct {
@@ -96,6 +98,20 @@ type DeleteConfig struct {
 	argParser *arg.Parser `arg:"-"`
 }
 
+type CuratorConfig struct {
+	GeneralConfig
+	DatabaseConfig
+	AwsGeneralConfig
+
+	AWSVaultName string `arg:"positional,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
+	DontAsk      bool   `arg:"-y,env:DONT_ASK,help:Dont ask if you be sure to delete backup."`
+
+	OlderThanTime *time.Time `arg:"--older-than,env:OLDER_THAN,help:Backups which are older than this time."`
+	MaxAgeDays    int        `arg:"--max-age,env:MAX_AGE,help:Backups which are older than x days."`
+
+	argParser *arg.Parser `arg:"-"`
+}
+
 type GeneralConfig struct {
 	LogLevel string `arg:"-l,env:LOG_LEVEL,help:The log level."`
 }
@@ -113,13 +129,13 @@ func NewConfig() *Config {
 	cfg := &Config{}
 
 	if len(os.Args) <= 1 {
-		fmt.Printf("You have to specify a subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow})
+		fmt.Printf("You have to specify a subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow, ActionCurator})
 		os.Exit(2)
 	}
 	cfg.Action = os.Args[1]
 
 	if !isValidAction(cfg.Action) {
-		fmt.Printf("You have to specify a valid subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow})
+		fmt.Printf("You have to specify a valid subcommand: %v\n", []string{ActionCreate, ActionGet, ActionDelete, ActionList, ActionShow, ActionCurator})
 		os.Exit(2)
 	}
 
@@ -213,11 +229,31 @@ func NewConfig() *Config {
 		cfg.Delete.argParser, _ = arg.NewParser(arg.Config{}, cfg.Delete)
 		argParser = cfg.Delete.argParser
 		err = cfg.Delete.argParser.Parse(os.Args[2:])
+	case ActionCurator:
+		cfg.Curator = &CuratorConfig{
+			GeneralConfig: GeneralConfig{
+				LogLevel: "INFO",
+			},
+			DatabaseConfig: DatabaseConfig{
+				Database: DefaultDatabase,
+			},
+
+			DontAsk: false,
+		}
+
+		cfg.Curator.argParser, _ = arg.NewParser(arg.Config{}, cfg.Curator)
+		argParser = cfg.Curator.argParser
+		err = cfg.Curator.argParser.Parse(os.Args[2:])
 	}
 
-	if err != nil && err == arg.ErrHelp {
-		argParser.WriteHelp(os.Stdout)
-		os.Exit(0)
+	if err != nil {
+		if err == arg.ErrHelp {
+			argParser.WriteHelp(os.Stdout)
+			os.Exit(0)
+		}
+
+		fmt.Printf("Error while parsing arguments: %s", err.Error())
+		os.Exit(3)
 	}
 
 	return cfg
@@ -248,6 +284,9 @@ func (c *ListConfig) Fail(format string, args ...interface{}) {
 func (c *ShowConfig) Fail(format string, args ...interface{}) {
 	failInternal(c.argParser, format, args...)
 }
+func (c *CuratorConfig) Fail(format string, args ...interface{}) {
+	failInternal(c.argParser, format, args...)
+}
 func failInternal(argParser *arg.Parser, format string, args ...interface{}) {
 	fmt.Printf(format+"\n\n", args...)
 	argParser.WriteHelp(os.Stdout)
@@ -265,6 +304,8 @@ func isValidAction(action string) bool {
 	case ActionShow:
 		fallthrough
 	case ActionList:
+		fallthrough
+	case ActionCurator:
 		return true
 	default:
 		return false

@@ -25,6 +25,8 @@ func main() {
 		cliAction = cli.NewShowAction()
 	case config.ActionList:
 		cliAction = cli.NewListAction()
+	case config.ActionCurator:
+		cliAction = cli.NewCuratorAction()
 	default:
 		panic("This should never happen!")
 	}

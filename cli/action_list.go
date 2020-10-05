@@ -19,6 +19,14 @@ func NewListAction() CliAction {
 func (a *actionList) Do(cfg *config.Config) {
 	dbRepository := database.NewRepository(cfg.List.Database)
 
+	backupIter := dbRepository.List()
+	printBackups(backupIter, cfg.List.Factor)
+}
+
+func printBackups(iter database.BackupIterator, factor int) []uint {
+	defer iter.Close()
+	backupIds := make([]uint, 0, 10)
+
 	w := csv.NewWriter(os.Stdout)
 	w.UseCRLF = true
 	w.Comma = ';'
@@ -28,21 +36,20 @@ func (a *actionList) Do(cfg *config.Config) {
 		panic(err)
 	}
 
-	backupIter := dbRepository.List()
-	defer backupIter.Close()
-
 	for {
-		backup, next := backupIter.Next()
+		backup, next := iter.Next()
 		if !next {
 			break
 		}
 
+		backupIds = append(backupIds, backup.ID)
+
 		var sLength string
 
-		if cfg.List.Factor == 1 {
+		if factor == 1 {
 			sLength = fmt.Sprintf("%d", backup.Length)
 		} else {
-			sLength = fmt.Sprintf("%.2f", float64(2684354560)/float64(cfg.List.Factor))
+			sLength = fmt.Sprintf("%.2f", float64(2684354560)/float64(factor))
 		}
 
 		err = w.Write([]string{
@@ -58,6 +65,8 @@ func (a *actionList) Do(cfg *config.Config) {
 		}
 	}
 	w.Flush()
+
+	return backupIds
 }
 
 func (a *actionList) Validate(cfg *config.Config) {

@@ -58,25 +58,29 @@ type backupManager struct {
 }
 
 func NewBackupCreater(pw string, savePw bool, partSize int, dbUrl string) (BackupCreater, error) {
-	return NewBackupManager(&pw, savePw, partSize, time.Millisecond, "", dbUrl)
+	return NewBackupManager(&pw, savePw, partSize, time.Millisecond, "", database.NewRepository(dbUrl))
 }
 
 func NewBackupGetter(pw *string, tier string, pollInterval time.Duration, dbUrl string) (BackupGetter, error) {
-	return NewBackupManager(pw, false, 0, pollInterval, tier, dbUrl)
+	return NewBackupManager(pw, false, 0, pollInterval, tier, database.NewRepository(dbUrl))
 }
 
 func NewBackupDeleter(dbUrl string) (BackupDeleter, error) {
-	return NewBackupManager(nil, false, 0, 0, "", dbUrl)
+	return NewBackupManager(nil, false, 0, 0, "", database.NewRepository(dbUrl))
 }
 
-func NewBackupManager(pw *string, savePw bool, partSize int, pollInterval time.Duration, tier, dbUrl string) (BackupManager, error) {
+func NewBackupDeleterForRepository(dbRepo database.Repository) (BackupDeleter, error) {
+	return NewBackupManager(nil, false, 0, 0, "", dbRepo)
+}
+
+func NewBackupManager(pw *string, savePw bool, partSize int, pollInterval time.Duration, tier string, dbRepo database.Repository) (BackupManager, error) {
 	g, err := NewAWSGlacier()
 	if err != nil {
 		return nil, err
 	}
 
 	return &backupManager{
-		dbRepository: database.NewRepository(dbUrl),
+		dbRepository: dbRepo,
 		glacier:      g,
 		partSize:     partSize,
 		pollInterval: pollInterval,

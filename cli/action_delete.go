@@ -20,7 +20,7 @@ func NewDeleteAction() CliAction {
 func (a *actionDelete) Do(cfg *config.Config) {
 	if !cfg.Delete.DontAsk {
 		if !askToBeSure() {
-			LogFatal("Backup cancelled!")
+			LogFatal("Backup deletion cancelled!")
 			return
 		}
 	}

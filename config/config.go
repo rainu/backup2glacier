@@ -108,6 +108,7 @@ type CuratorConfig struct {
 
 	OlderThanTime *time.Time `arg:"--older-than,env:OLDER_THAN,help:Backups which are older than this time."`
 	MaxAgeDays    int        `arg:"--max-age,env:MAX_AGE,help:Backups which are older than x days."`
+	KeepN         int        `arg:"--keep,env:LAST,help:Keep only the last n backups."`
 
 	argParser *arg.Parser `arg:"-"`
 }

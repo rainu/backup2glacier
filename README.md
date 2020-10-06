@@ -59,6 +59,8 @@ go build
 
 ## Release History
 
+* 0.2.1
+    * CLI curator option for keeping n backups
 * 0.2.0
     * Fix CLI help
     * add option for length factor in LIST command

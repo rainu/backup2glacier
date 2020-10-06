@@ -18,15 +18,18 @@ func NewCuratorAction() CliAction {
 func (a *actionCurator) Do(cfg *config.Config) {
 	dbRepository := database.NewRepository(cfg.Curator.Database)
 
-	var t time.Time
+	var backupIter database.BackupIterator
 
 	if cfg.Curator.OlderThanTime != nil {
-		t = *cfg.Curator.OlderThanTime
+		t := *cfg.Curator.OlderThanTime
+		backupIter = dbRepository.GetOlderThan(cfg.Curator.AWSVaultName, t)
+	} else if cfg.Curator.MaxAgeDays != 0 {
+		t := time.Now().Add(time.Hour * 24 * time.Duration(cfg.Curator.MaxAgeDays) * -1)
+		backupIter = dbRepository.GetOlderThan(cfg.Curator.AWSVaultName, t)
 	} else {
-		t = time.Now().Add(time.Hour * 24 * time.Duration(cfg.Curator.MaxAgeDays) * -1)
+		backupIter = dbRepository.GetLast(cfg.Curator.AWSVaultName, cfg.Curator.KeepN)
 	}
 
-	backupIter := dbRepository.GetOlderThan(cfg.Curator.AWSVaultName, t)
 	backupIds := printBackups(backupIter, 1)
 
 	if len(backupIds) == 0 {
@@ -59,7 +62,7 @@ func (a *actionCurator) Validate(cfg *config.Config) {
 	ValidateDatabase(&cfg.Curator.DatabaseConfig)
 	ValidateAWS(&cfg.Curator.AwsGeneralConfig)
 
-	if cfg.Curator.OlderThanTime == nil && cfg.Curator.MaxAgeDays == 0 {
-		cfg.Curator.Fail("Even OlderThan or MaxAge must be given!")
+	if cfg.Curator.OlderThanTime == nil && cfg.Curator.MaxAgeDays == 0 && cfg.Curator.KeepN == 0 {
+		cfg.Curator.Fail("Even OlderThan, MaxAge or Keep must be given!")
 	}
 }

@@ -63,13 +63,14 @@ func TestBlacklist(t *testing.T) {
 		testCase       string
 		expectedResult bool
 	}{
-		{"suffixes", `.*\.exe`, "test.exe", true },
-		{"suffixes", `.*\.exe`, "test.exe_", true },
-		{"suffixes", `.*\.exe$`, "test.exe_", false },
-		{"suffixes", `.*\.exe`, "full/path/to/test.exe", true },
-		{"suffixes", `.*\.exe`, ".exe", true },
-		{"suffixes", `.*\.exe`, "exe", false },
-		{"folders", `.*/log/.*`, "/path/to/log/test.txt", true },
+		{"suffixes", `.*\.exe`, "test.exe", true},
+		{"suffixes", `.*\.exe`, "test.exe_", true},
+		{"suffixes", `.*\.exe$`, "test.exe_", false},
+		{"suffixes", `.*\.exe`, "full/path/to/test.exe", true},
+		{"suffixes", `.*\.exe`, ".exe", true},
+		{"suffixes", `.*\.exe`, "exe", false},
+		{"folders", `.*/log/.*`, "/path/to/log/test.txt", true},
+		{"folders", `/log/.*`, "/path/to/log/test.txt", true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

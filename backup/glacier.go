@@ -262,9 +262,7 @@ func (a *awsGlacier) determineJobId(vaultName, archiveId string) (*glacier.JobDe
 
 	LogInfo("Complete ListJobs: %+v", result)
 	for _, jobDesc := range result.JobList {
-		if *jobDesc.ArchiveId == archiveId &&
-			*jobDesc.Action == "ArchiveRetrieval" {
-
+		if *jobDesc.Action == "ArchiveRetrieval" && *jobDesc.ArchiveId == archiveId {
 			return jobDesc, nil
 		}
 	}

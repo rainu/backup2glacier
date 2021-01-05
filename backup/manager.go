@@ -196,11 +196,14 @@ func (b *backupManager) updateBackup(result *BackupResult, dbBackupEntity *model
 	if result.Error != nil {
 		dbBackupEntity.Error = result.Error.Error()
 	}
-	dbBackupEntity.ArchiveId = result.ArchiveInfo.ArchiveId
 	dbBackupEntity.UploadId = result.UploadId
-	dbBackupEntity.Checksum = result.ArchiveInfo.Checksum
-	dbBackupEntity.Location = result.ArchiveInfo.Location
 	dbBackupEntity.Length = result.TotalSize
+
+	if result.ArchiveInfo != nil {
+		dbBackupEntity.ArchiveId = result.ArchiveInfo.ArchiveId
+		dbBackupEntity.Checksum = result.ArchiveInfo.Checksum
+		dbBackupEntity.Location = result.ArchiveInfo.Location
+	}
 
 	b.dbRepository.UpdateBackup(dbBackupEntity)
 }

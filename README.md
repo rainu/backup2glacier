@@ -59,6 +59,9 @@ go build
 
 ## Release History
 
+* 0.2.2
+    * Fix nil pointer error if there is a glacier job of type != "ArchiveRetrieval" 
+    * Fix nil pointer error if upload failed
 * 0.2.1
     * CLI curator option for keeping n backups
 * 0.2.0

@@ -59,6 +59,8 @@ go build
 
 ## Release History
 
+* 0.2.4
+    * delete the archive even if the archive id is empty
 * 0.2.3
     * ask for the password if no one is in the database and no corresponding argument is giving
 * 0.2.2

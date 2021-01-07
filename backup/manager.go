@@ -288,7 +288,8 @@ func (b *backupManager) ensureTarget(target string) error {
 func (b *backupManager) Delete(backupId uint) error {
 	toDelete := b.dbRepository.GetBackupById(backupId)
 	if toDelete.ArchiveId == nil {
-		return errors.New("The backup has no archiveId. Was the upload successful?")
+		b.dbRepository.DeleteBackupById(backupId)
+		return nil
 	}
 
 	err := b.glacier.Delete(AWSGlacierDelete{

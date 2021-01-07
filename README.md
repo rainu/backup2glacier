@@ -59,6 +59,8 @@ go build
 
 ## Release History
 
+* 0.2.3
+    * ask for the password if no one is in the database and no corresponding argument is giving
 * 0.2.2
     * Fix nil pointer error if there is a glacier job of type != "ArchiveRetrieval" 
     * Fix nil pointer error if upload failed

@@ -31,7 +31,7 @@ type BackupCreater interface {
 type BackupGetter interface {
 	io.Closer
 
-	Download(backupId uint, target string) error
+	Download(backupId uint, target string, fallbackPassword func() string) error
 }
 
 type BackupDeleter interface {
@@ -42,7 +42,7 @@ type BackupManager interface {
 	io.Closer
 
 	Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult
-	Download(backupId uint, target string) error
+	Download(backupId uint, target string, fallbackPassword func() string) error
 	Delete(backupId uint) error
 }
 
@@ -208,20 +208,19 @@ func (b *backupManager) updateBackup(result *BackupResult, dbBackupEntity *model
 	b.dbRepository.UpdateBackup(dbBackupEntity)
 }
 
-func (b *backupManager) Download(backupId uint, target string) error {
+func (b *backupManager) Download(backupId uint, target string, fallbackPassword func() string) error {
 	fTarget, err := os.Create(target)
 	if err != nil {
 		return errors.Wrap(err, "Could not create target file")
 	}
 	defer fTarget.Close()
 
-	if err != nil {
-		return errors.Wrap(err, "Error while initialise download")
-	}
-
 	toDownload := b.dbRepository.GetBackupById(backupId)
 	if b.password != nil {
 		toDownload.Password = *b.password
+	}
+	if toDownload.Password == "" {
+		toDownload.Password = fallbackPassword()
 	}
 
 	// glacier -> decrypt -> save as zip

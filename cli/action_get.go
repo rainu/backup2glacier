@@ -32,7 +32,7 @@ func (a *actionGet) Do(cfg *config.Config) {
 	defer repo.Close()
 
 	if e := repo.GetBackupById(cfg.Get.BackupId); e.ID == cfg.Get.BackupId {
-		err := b.Download(cfg.Get.BackupId, cfg.Get.File)
+		err := b.Download(cfg.Get.BackupId, cfg.Get.File, askForPassword)
 		if err != nil {
 			LogError("Could not download backup. Error: %v", err)
 		} else {

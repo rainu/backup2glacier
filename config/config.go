@@ -38,6 +38,7 @@ type CreateConfig struct {
 	AWSVaultName string   `arg:"positional,env:AWS_VAULT_NAME,help:The name of the glacier vault."`
 	Files        []string `arg:"positional,env:FILE,help:The file or folder to backup."`
 	Blacklist    []string `arg:"-b,separate,env:BLACKLIST,help:Regular expressions of files that should be excluded."`
+	Whitelist    []string `arg:"-w,separate,env:WHITELIST,help:Regular expressions of files that should be included even if their would be excluded by blacklist."`
 
 	AWSPartSize           int    `arg:"--aws-part-size,env:AWS_PART_SIZE,help:The size of each part (except the last) in MiB."`
 	AWSArchiveDescription string `arg:"-d,env:AWS_ARCHIVE_DESC,help:The description of the archive."`
@@ -264,6 +265,16 @@ func (c *CreateConfig) GetBlacklist() []*regexp.Regexp {
 	var result []*regexp.Regexp
 
 	for _, curEntry := range c.Blacklist {
+		result = append(result, regexp.MustCompile(curEntry))
+	}
+
+	return result
+}
+
+func (c *CreateConfig) GetWhitelist() []*regexp.Regexp {
+	var result []*regexp.Regexp
+
+	for _, curEntry := range c.Whitelist {
 		result = append(result, regexp.MustCompile(curEntry))
 	}
 

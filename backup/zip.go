@@ -19,8 +19,8 @@ type ZipContent struct {
 	FileInfo os.FileInfo
 }
 
-//ZIP the given file/folder and write file information out in given channel
-func Zip(filePaths []string, blacklist []*regexp.Regexp, dst io.Writer, contentChan chan<- *ZipContent) {
+// ZIP the given file/folder and write file information out in given channel
+func Zip(filePaths []string, blacklist, whitelist []*regexp.Regexp, dst io.Writer, contentChan chan<- *ZipContent) {
 	// Create a new zip archive.
 	zipWriter := zip.NewWriter(dst)
 	zipWriter.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
@@ -37,10 +37,10 @@ func Zip(filePaths []string, blacklist []*regexp.Regexp, dst io.Writer, contentC
 		}
 
 		if fInfo.IsDir() {
-			addFiles(zipWriter, absFilePath+"/", filepath.Dir(absFilePath+"/")+"/", blacklist, contentChan)
+			addFiles(zipWriter, absFilePath+"/", filepath.Dir(absFilePath+"/")+"/", blacklist, whitelist, contentChan)
 		} else {
 			dir, name := filepath.Split(absFilePath)
-			addFile(zipWriter, dir, dir+"/", name, blacklist, contentChan)
+			addFile(zipWriter, dir, dir+"/", name, blacklist, whitelist, contentChan)
 		}
 	}
 
@@ -49,7 +49,7 @@ func Zip(filePaths []string, blacklist []*regexp.Regexp, dst io.Writer, contentC
 	}
 }
 
-func addFiles(w *zip.Writer, basePath, baseInZip string, blacklist []*regexp.Regexp, contentChan chan<- *ZipContent) {
+func addFiles(w *zip.Writer, basePath, baseInZip string, blacklist, whitelist []*regexp.Regexp, contentChan chan<- *ZipContent) {
 	// Open the Directory
 	files, err := ioutil.ReadDir(basePath)
 	if err != nil {
@@ -61,14 +61,14 @@ func addFiles(w *zip.Writer, basePath, baseInZip string, blacklist []*regexp.Reg
 		if fileDesc.IsDir() {
 			// recursion ahead!
 			newBase := basePath + fileDesc.Name() + "/"
-			addFiles(w, newBase, baseInZip+"/"+fileDesc.Name()+"/", blacklist, contentChan)
+			addFiles(w, newBase, baseInZip+"/"+fileDesc.Name()+"/", blacklist, whitelist, contentChan)
 		} else {
-			addFile(w, basePath, baseInZip, fileDesc.Name(), blacklist, contentChan)
+			addFile(w, basePath, baseInZip, fileDesc.Name(), blacklist, whitelist, contentChan)
 		}
 	}
 }
 
-func addFile(w *zip.Writer, basePath, baseInZip, fileName string, blacklist []*regexp.Regexp, contentChan chan<- *ZipContent) int64 {
+func addFile(w *zip.Writer, basePath, baseInZip, fileName string, blacklist, whitelist []*regexp.Regexp, contentChan chan<- *ZipContent) int64 {
 	//open for reading
 	filePath := normalizeFilePath(basePath + fileName)
 	zipPath := normalizeZipPath(baseInZip + fileName)
@@ -80,9 +80,13 @@ func addFile(w *zip.Writer, basePath, baseInZip, fileName string, blacklist []*r
 	}
 	defer osFile.Close()
 
-	if blacklisted, expr := isBlacklisted(filePath, blacklist); blacklisted {
-		LogInfo(`Ignore file because it is blacklisted: %s -> "%s"`, filePath, expr)
-		return 0
+	if blacklisted, blExpr := isListed(filePath, blacklist); blacklisted {
+		if whitelisted, wlExpr := isListed(filePath, whitelist); whitelisted {
+			LogInfo(`Include file because it is whitelisted: %s -> "%s"`, filePath, wlExpr)
+		} else {
+			LogInfo(`Ignore file because it is blacklisted: %s -> "%s"`, filePath, blExpr)
+			return 0
+		}
 	}
 
 	LogInfo("Add to zip: %s -> %s", osFile.Name(), zipPath)
@@ -125,8 +129,8 @@ func addFile(w *zip.Writer, basePath, baseInZip, fileName string, blacklist []*r
 	return written
 }
 
-func isBlacklisted(path string, blacklist []*regexp.Regexp) (bool, *regexp.Regexp) {
-	for _, curExpr := range blacklist {
+func isListed(path string, list []*regexp.Regexp) (bool, *regexp.Regexp) {
+	for _, curExpr := range list {
 		if curExpr.MatchString(path) {
 			return true, curExpr
 		}

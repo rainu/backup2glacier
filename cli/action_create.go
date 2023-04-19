@@ -31,7 +31,7 @@ func (a *actionCreate) Do(cfg *config.Config) {
 	}
 	defer b.Close()
 
-	result := b.Create(cfg.Create.Files, cfg.Create.GetBlacklist(), cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
+	result := b.Create(cfg.Create.Files, cfg.Create.GetBlacklist(), cfg.Create.GetWhitelist(), cfg.Create.AWSArchiveDescription, cfg.Create.AWSVaultName)
 
 	if result.Error != nil {
 		LogError("Could not upload backup. Error: %v", result.Error)
@@ -48,6 +48,12 @@ func (a *actionCreate) Validate(cfg *config.Config) {
 	for _, curExpr := range cfg.Create.Blacklist {
 		if _, err := regexp.Compile(curExpr); err != nil {
 			cfg.Create.Fail(fmt.Sprintf(`Blacklist expression is invalid: "%s" Cause: %v`, curExpr, err))
+		}
+	}
+
+	for _, curExpr := range cfg.Create.Whitelist {
+		if _, err := regexp.Compile(curExpr); err != nil {
+			cfg.Create.Fail(fmt.Sprintf(`Whitelist expression is invalid: "%s" Cause: %v`, curExpr, err))
 		}
 	}
 

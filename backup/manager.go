@@ -25,7 +25,7 @@ type BackupResult struct {
 type BackupCreater interface {
 	io.Closer
 
-	Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult
+	Create(files []string, blacklist, whitelist []*regexp.Regexp, description, vaultName string) *BackupResult
 }
 
 type BackupGetter interface {
@@ -41,7 +41,7 @@ type BackupDeleter interface {
 type BackupManager interface {
 	io.Closer
 
-	Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult
+	Create(files []string, blacklist, whitelist []*regexp.Regexp, description, vaultName string) *BackupResult
 	Download(backupId uint, target string, fallbackPassword func() string) error
 	Delete(backupId uint) error
 }
@@ -94,7 +94,7 @@ func (b *backupManager) Close() error {
 	return b.dbRepository.Close()
 }
 
-func (b *backupManager) Create(files []string, blacklist []*regexp.Regexp, description, vaultName string) *BackupResult {
+func (b *backupManager) Create(files []string, blacklist, whitelist []*regexp.Regexp, description, vaultName string) *BackupResult {
 	// folder/file -> zip -> encrypt -> glacier
 	srcZip, dstZip := io.Pipe()
 	srcCrypt, dstCrypt := io.Pipe()
@@ -112,7 +112,7 @@ func (b *backupManager) Create(files []string, blacklist []*regexp.Regexp, descr
 		defer wg.Done()
 		defer dstZip.Close()
 
-		Zip(files, blacklist, dstZip, contentChan)
+		Zip(files, blacklist, whitelist, dstZip, contentChan)
 	}()
 	go func() {
 		for {

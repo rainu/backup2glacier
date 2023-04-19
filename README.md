@@ -59,6 +59,8 @@ go build
 
 ## Release History
 
+* 0.2.5
+    * add whitelist functionality for CREATE command
 * 0.2.4
     * delete the archive even if the archive id is empty
 * 0.2.3
